@@ -14,6 +14,19 @@
   </style>
 </head>
 <body class="bg-gray-50 text-gray-800 font-sans min-h-screen p-4 md:p-8">
+  <!-- ✅ New: lightweight status bar for live messages from app.js -->
+  <div id="status" class="w-full max-w-6xl mx-auto mb-3 text-xs md:text-sm rounded-md px-3 py-2 bg-gray-900 text-emerald-400"
+       aria-live="polite" aria-atomic="true">
+    Starting…
+  </div>
+
+  <noscript>
+    <div class="w-full max-w-6xl mx-auto mb-3 rounded-md px-3 py-2 bg-red-600 text-white text-sm">
+      JavaScript is disabled. Please enable it to use the Trading Journal.
+    </div>
+  </noscript>
+
+  <!-- Existing full-screen loading overlay (kept) -->
   <div id="loading-status" class="fixed inset-0 flex items-center justify-center bg-gray-50 z-50">
     <div class="text-center p-8 bg-white shadow-xl rounded-xl">
       <div class="spinner animate-spin rounded-full h-12 w-12 border-4 border-t-4 border-indigo-500 border-gray-200 mx-auto mb-4"></div>
@@ -112,6 +125,7 @@
     </div>
   </div>
 
+  <!-- Your module (unchanged) -->
   <script type="module" src="app.js"></script>
 </body>
 </html>
