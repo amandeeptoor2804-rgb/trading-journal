@@ -140,19 +140,15 @@
     </section>
   </div>
 
-  <script>
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', ()=>navigator.serviceWorker.register('service-worker.js'));
-    }
-  </script>
+  <!-- Re-register SW each deploy to break old cache -->
+  <script>if("serviceWorker" in navigator){navigator.serviceWorker.register("service-worker.js?ver=6");}</script>
 
-  <!-- APP SCRIPT -->
+  <!-- APP SCRIPT (same as before) -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js";
     import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-auth.js";
     import { getFirestore, collection, addDoc, deleteDoc, doc, onSnapshot, query, where, orderBy } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
 
-    /* === YOUR FIREBASE CONFIG (from your message) === */
     const firebaseConfig = {
       apiKey: "AIzaSyB5rvkKPst6V9-7HoqK1f27jQj6x7f8LiA",
       authDomain: "trading-journal-da4eb.firebaseapp.com",
@@ -163,37 +159,31 @@
       measurementId: "G-WR261BKTXL"
     };
 
-    /* === AUTH WHITELIST === */
     const ALLOWED_EMAIL = "kaur.2804amandeep@gmail.com";
 
-    /* === INIT === */
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db = getFirestore(app);
 
-    /* === HELPERS === */
     const $ = id => document.getElementById(id);
     const show = el => el.classList.remove("hidden");
     const hide = el => el.classList.add("hidden");
     const money = n => new Intl.NumberFormat("en-US",{style:"currency",currency:"USD"}).format(Number(n)||0);
     const todayISO = () => {const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`};
-
     function setLoading(msg){$("loading-msg").textContent=msg;show($("loading"))}
     function clearLoading(){hide($("loading"))}
 
-    /* === LOGIN FLOW === */
     setLoading("Checking session…");
     $("login-form").addEventListener("submit", async (e)=>{
       e.preventDefault(); $("login-msg").textContent="";
       try{
-        const email=$("email").value.trim(), pass=$("password").value.trim();
-        const cred=await signInWithEmailAndPassword(auth,email,pass);
+        const cred=await signInWithEmailAndPassword(auth,$("email").value.trim(),$("password").value.trim());
         if(cred.user.email!==ALLOWED_EMAIL){$("login-msg").textContent="Not authorized";await signOut(auth);}
-      }catch(err){$("login-msg").textContent=`Firebase: ${err.message || err.code}`}
+      }catch(err){$("login-msg").textContent=`Firebase: ${err.message||err.code}`}
     });
-    $("logout").onclick = ()=>signOut(auth);
+    $("logout").onclick=()=>signOut(auth);
 
-    onAuthStateChanged(auth, (user)=>{
+    onAuthStateChanged(auth,(user)=>{
       clearLoading();
       if(user && user.email===ALLOWED_EMAIL){
         $("auth-status").textContent=`Signed in as ${user.email}`;
@@ -201,23 +191,18 @@
       }else{ show($("login")); hide($("app")); }
     });
 
-    /* === APP (scoped by user) === */
-    let unsub=null, pnlChart=null, outcomesChart=null;
+    let unsub=null;
     function boot(uid){
       if(unsub) unsub();
-      const ref = collection(db,"trades");
-      const q = query(ref, where("ownerUid","==",uid), orderBy("entryDate","asc"));
+      const ref=collection(db,"trades");
+      const q=query(ref,where("ownerUid","==",uid),orderBy("entryDate","asc"));
 
-      $("add-form").onsubmit = async (e)=>{
+      $("add-form").onsubmit=async(e)=>{
         e.preventDefault(); $("form-msg").textContent="";
-        const type=$("type").value;
-        const assetType=$("assetType").value;
-        const action=$("action").value;
+        const type=$("type").value, assetType=$("assetType").value, action=$("action").value;
         const symbol=($("symbol").value||"").toUpperCase();
         const entryDate=$("entryDate").value||todayISO();
-        const size=+($("size").value||0);
-        const entry=+($("entryPrice").value||0);
-        const exit=+($("exitPrice").value||0);
+        const size=+($("size").value||0), entry=+($("entryPrice").value||0), exit=+($("exitPrice").value||0);
 
         if(type==="Trade" && (!symbol || size<=0)) return $("form-msg").textContent="Invalid trade";
         if(type==="Deposit" && entry<=0) return $("form-msg").textContent="Invalid deposit";
@@ -225,57 +210,40 @@
         let pnl=0,pct=0;
         if(type==="Trade"){
           const dir=(action==="Short"||action==="Put")?-1:1;
-          pnl=(exit-entry)*size*dir; pct = entry>0 ? (pnl/(entry*size))*100 : 0;
+          pnl=(exit-entry)*size*dir; pct=entry>0?(pnl/(entry*size))*100:0;
         }
 
         try{
-          await addDoc(ref,{
-            ownerUid:uid, type, assetType, action, symbol,
-            entryDate, size, entryPrice:entry, exitPrice:exit,
-            pnl:+pnl.toFixed(2), pnlPct:+pct.toFixed(2),
-            createdAt:new Date().toISOString()
-          });
+          await addDoc(ref,{ownerUid:uid,type,assetType,action,symbol,entryDate,size,entryPrice:entry,exitPrice:exit,pnl:+pnl.toFixed(2),pnlPct:+pct.toFixed(2),createdAt:new Date().toISOString()});
           e.target.reset();
-        }catch(err){ $("form-msg").textContent="Error: "+(err.message||err); }
+        }catch(err){$("form-msg").textContent="Error: "+(err.message||err)}
       };
 
-      unsub = onSnapshot(q, snap=>{
+      unsub=onSnapshot(q,snap=>{
         const rows=[]; snap.forEach(d=>rows.push({id:d.id,...d.data()}));
         render(rows);
       });
     }
 
-    window.delTrade = async(id)=>{ try{ await deleteDoc(doc(db,"trades",id)); }catch(e){ alert(e.message);} };
+    window.delTrade=async(id)=>{try{await deleteDoc(doc(db,"trades",id))}catch(e){alert(e.message)}};
 
     function render(list){
-      const body=$("trade-list"); body.innerHTML="";
-      const empty=$("empty");
-
-      if(!list.length){
-        show(empty);
-        $("total-pnl").textContent=money(0);
-        $("win-rate").textContent="0%";
-        $("total-trades").textContent="0";
-        $("avg-pnl").textContent=money(0);
-        $("pnl-14d").textContent=money(0);
-        updateCharts([],[]);
-        return;
-      }
+      const body=$("trade-list"); body.innerHTML=""; const empty=$("empty");
+      if(!list.length){show(empty); updateStats([],0,0,0,0,0); updateCharts([],[]); return;}
       hide(empty);
 
       let running=0,w=0,l=0,z=0,last14=0;
       const cutISO=new Date(Date.now()-14*864e5).toISOString().split("T")[0];
-
       const labels=[], cum=[];
-      list.forEach(t=>{
-        running += t.pnl||0;
-        const cls=(t.pnl||0)>=0?"text-green-600":"text-red-600";
-        const result = t.type!=="Trade" ? "-" : t.pnl>0?"Win":t.pnl<0?"Loss":"Breakeven";
-        if(result==="Win")w++; if(result==="Loss")l++; if(result==="Breakeven")z++;
-        if(t.type==="Trade" && t.entryDate>=cutISO) last14+=t.pnl||0;
 
-        labels.push(`${t.entryDate} ${t.symbol||""}`.trim());
-        cum.push(running);
+      list.forEach(t=>{
+        running+=t.pnl||0;
+        if(t.type==="Trade" && t.entryDate>=cutISO) last14+=t.pnl||0;
+        labels.push(`${t.entryDate} ${t.symbol||""}`.trim()); cum.push(running);
+
+        const cls=(t.pnl||0)>=0?"text-green-600":"text-red-600";
+        const result=t.type!=="Trade"?"-":t.pnl>0?"Win":t.pnl<0?"Loss":"Breakeven";
+        if(result==="Win")w++; if(result==="Loss")l++; if(result==="Breakeven")z++;
 
         body.insertAdjacentHTML("beforeend",`
           <tr class="hover:bg-gray-50">
@@ -296,43 +264,32 @@
         `);
       });
 
-      const trades = list.filter(x=>x.type==="Trade");
-      const total = list.reduce((a,b)=>a+(b.pnl||0),0);
-      const wr = trades.length ? (w/trades.length)*100 : 0;
-
-      $("pnl-14d").textContent=money(last14);
-      $("win-rate").textContent=wr.toFixed(1)+"%";
-      $("total-trades").textContent=String(trades.length);
-      $("total-pnl").textContent=money(total);
-      $("avg-pnl").textContent=money(total/(trades.length||1));
-
+      const trades=list.filter(x=>x.type==="Trade");
+      const total=list.reduce((a,b)=>a+(b.pnl||0),0);
+      const wr = trades.length?(w/trades.length)*100:0;
+      updateStats(list,total,wr,trades.length,last14);
       updateCharts(labels,cum,w,l,z);
     }
 
+    function updateStats(list,total,wr,tradeCount,last14){
+      $("pnl-14d").textContent=money(last14||0);
+      $("win-rate").textContent=(wr||0).toFixed(1)+"%";
+      $("total-trades").textContent=String(tradeCount||0);
+      $("total-pnl").textContent=money(total||0);
+      $("avg-pnl").textContent=money((total||0)/(tradeCount||1));
+    }
+
     function updateCharts(labels,cum,w=0,l=0,z=0){
-      // Line
       if(!window._pnlChart){
-        window._pnlChart = new Chart(document.getElementById("pnlChart"),{
-          type:"line",
+        window._pnlChart=new Chart(document.getElementById("pnlChart"),{type:"line",
           data:{labels,datasets:[{label:"Cumulative P&L",data:cum,borderColor:"#10b981",fill:false}]},
-          options:{responsive:true,maintainAspectRatio:false}
-        });
-      }else{
-        _pnlChart.data.labels=labels;
-        _pnlChart.data.datasets[0].data=cum;
-        _pnlChart.update();
-      }
-      // Doughnut
+          options:{responsive:true,maintainAspectRatio:false}});
+      }else{_pnlChart.data.labels=labels;_pnlChart.data.datasets[0].data=cum;_pnlChart.update();}
       if(!window._outChart){
-        window._outChart = new Chart(document.getElementById("outcomesChart"),{
-          type:"doughnut",
+        window._outChart=new Chart(document.getElementById("outcomesChart"),{type:"doughnut",
           data:{labels:["Win","Loss","Breakeven"],datasets:[{data:[w,l,z],backgroundColor:["#10b981","#ef4444","#f59e0b"]}]},
-          options:{responsive:true,maintainAspectRatio:false}
-        });
-      }else{
-        _outChart.data.datasets[0].data=[w,l,z];
-        _outChart.update();
-      }
+          options:{responsive:true,maintainAspectRatio:false}});
+      }else{_outChart.data.datasets[0].data=[w,l,z];_outChart.update();}
     }
   </script>
 </body>
