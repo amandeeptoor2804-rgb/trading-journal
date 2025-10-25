@@ -7,29 +7,25 @@
 
   <!-- PWA -->
   <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#4f46e5">
-  <!-- (If you have icons in /icons/, these are nice-to-have) -->
-  <link rel="icon" sizes="192x192" href="icons/icon-192.png">
-  <link rel="icon" sizes="512x512" href="icons/icon-512.png">
-  <link rel="apple-touch-icon" href="icons/icon-512.png">
+  <meta name="theme-color" content="#4f46e5" />
+  <link rel="icon" href="icons/icon-192.png" sizes="192x192">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
 
-  <!-- Tailwind + ChartJS -->
+  <!-- UI libs -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
 
   <style>
-    #trade-list-container { -webkit-overflow-scrolling: touch; }
-    .spinner { border-top-color:#4f46e5 }
+    .spinner{border-top-color:#4f46e5}
+    #trade-list-container{-webkit-overflow-scrolling:touch}
   </style>
 </head>
-
 <body class="bg-gray-50 text-gray-800 min-h-screen p-4 md:p-8">
-
   <!-- Loading -->
   <div id="loading" class="fixed inset-0 hidden items-center justify-center bg-gray-50 z-50">
     <div class="text-center p-8 bg-white shadow-xl rounded-xl">
       <div class="spinner animate-spin rounded-full h-12 w-12 border-4 border-indigo-500 border-gray-200 mx-auto mb-4"></div>
-      <p id="loading-msg" class="text-indigo-600 font-semibold">Loading...</p>
+      <p id="loading-msg" class="text-indigo-600 font-semibold">Loading…</p>
     </div>
   </div>
 
@@ -56,7 +52,7 @@
       <button id="logout" class="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg">Log Out</button>
     </header>
 
-    <!-- Metrics -->
+    <!-- Cards -->
     <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
       <div class="bg-white p-4 rounded-xl shadow-lg border-l-4 border-indigo-500">
         <p class="text-xs text-gray-500 uppercase">Total P&L</p>
@@ -95,25 +91,21 @@
     <!-- Add Entry -->
     <section class="bg-white p-6 rounded-xl shadow-lg mb-8">
       <h2 class="text-lg font-semibold text-indigo-600 mb-4">Log New Entry</h2>
-      <form id="add-form" class="grid grid-cols-2 md:grid-cols-8 gap-4">
+      <form id="add-form" class="grid grid-cols-2 md:grid-cols-8 gap-3">
         <select id="type" class="p-3 border rounded-lg">
           <option>Trade</option><option>Deposit</option>
         </select>
-
         <select id="assetType" class="p-3 border rounded-lg">
           <option>Stock</option><option>Crypto</option><option>Forex</option>
         </select>
-
         <select id="action" class="p-3 border rounded-lg">
           <option>Long</option><option>Short</option><option>Call</option><option>Put</option>
         </select>
-
-        <input id="symbol" placeholder="Symbol" class="p-3 border rounded-lg col-span-2" />
+        <input id="symbol" placeholder="Symbol" class="p-3 border rounded-lg" />
         <input id="entryDate" type="date" class="p-3 border rounded-lg" />
         <input id="size" type="number" placeholder="Size" class="p-3 border rounded-lg" />
         <input id="entryPrice" type="number" step="0.01" placeholder="Entry / Amount" class="p-3 border rounded-lg" />
         <input id="exitPrice" type="number" step="0.01" placeholder="Exit (for trades)" class="p-3 border rounded-lg" />
-
         <button class="bg-indigo-600 text-white rounded-lg font-bold py-3 col-span-2 md:col-span-1">Add</button>
       </form>
       <div id="form-msg" class="text-red-600 text-xs mt-2"></div>
@@ -148,118 +140,108 @@
     </section>
   </div>
 
-  <!-- SCRIPT -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', ()=>navigator.serviceWorker.register('service-worker.js'));
+    }
+  </script>
+
+  <!-- APP SCRIPT -->
   <script type="module">
-    /* Firebase */
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js";
     import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-auth.js";
-    import { getFirestore, collection, addDoc, deleteDoc, doc, onSnapshot, query, where } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
+    import { getFirestore, collection, addDoc, deleteDoc, doc, onSnapshot, query, where, orderBy } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
 
-    /* Your allowed email for login UI */
-    const ALLOWED_EMAIL = "kaur.2804amandeep@gmail.com";
-
-    /* Your REAL Firebase config */
+    /* === YOUR FIREBASE CONFIG (from your message) === */
     const firebaseConfig = {
       apiKey: "AIzaSyB5rvkKPst6V9-7HoqK1f27jQj6x7f8LiA",
       authDomain: "trading-journal-da4eb.firebaseapp.com",
       projectId: "trading-journal-da4eb",
-      storageBucket: "trading-journal-da4eb.appspot.com",
+      storageBucket: "trading-journal-da4eb.firebasestorage.app",
       messagingSenderId: "50906470929",
       appId: "1:50906470929:web:b9ad784e9ae86c06d42fb0",
       measurementId: "G-WR261BKTXL"
     };
 
+    /* === AUTH WHITELIST === */
+    const ALLOWED_EMAIL = "kaur.2804amandeep@gmail.com";
+
+    /* === INIT === */
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db = getFirestore(app);
 
-    /* Helpers */
+    /* === HELPERS === */
     const $ = id => document.getElementById(id);
     const show = el => el.classList.remove("hidden");
     const hide = el => el.classList.add("hidden");
-    const money = n => new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(Number(n)||0);
-    const todayISO = () => {
-      const d=new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-    };
-    const setLoading = m => { $("loading-msg").textContent=m; show($("loading")); };
-    const clearLoading = () => hide($("loading"));
+    const money = n => new Intl.NumberFormat("en-US",{style:"currency",currency:"USD"}).format(Number(n)||0);
+    const todayISO = () => {const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`};
 
-    /* Auth UI */
-    setLoading("Checking session...");
+    function setLoading(msg){$("loading-msg").textContent=msg;show($("loading"))}
+    function clearLoading(){hide($("loading"))}
+
+    /* === LOGIN FLOW === */
+    setLoading("Checking session…");
     $("login-form").addEventListener("submit", async (e)=>{
-      e.preventDefault();
-      $("login-msg").textContent = "";
-      try {
-        const email = $("email").value.trim();
-        const pass  = $("password").value.trim();
-        const cred = await signInWithEmailAndPassword(auth,email,pass);
-        if(cred.user.email !== ALLOWED_EMAIL){
-          $("login-msg").textContent="Not authorized";
-          await signOut(auth);
-          return;
-        }
-      }catch(err){ $("login-msg").textContent = "Firebase: " + (err.message || err.code); }
+      e.preventDefault(); $("login-msg").textContent="";
+      try{
+        const email=$("email").value.trim(), pass=$("password").value.trim();
+        const cred=await signInWithEmailAndPassword(auth,email,pass);
+        if(cred.user.email!==ALLOWED_EMAIL){$("login-msg").textContent="Not authorized";await signOut(auth);}
+      }catch(err){$("login-msg").textContent=`Firebase: ${err.message || err.code}`}
     });
     $("logout").onclick = ()=>signOut(auth);
 
     onAuthStateChanged(auth, (user)=>{
       clearLoading();
-      if(user && user.email === ALLOWED_EMAIL){
-        $("auth-status").textContent = "Signed in as: "+user.email;
+      if(user && user.email===ALLOWED_EMAIL){
+        $("auth-status").textContent=`Signed in as ${user.email}`;
         hide($("login")); show($("app")); boot(user.uid);
-      }else{
-        show($("login")); hide($("app"));
-      }
+      }else{ show($("login")); hide($("app")); }
     });
 
-    /* App logic */
-    let unsub = null, pnlChart=null, outcomesChart=null;
-
+    /* === APP (scoped by user) === */
+    let unsub=null, pnlChart=null, outcomesChart=null;
     function boot(uid){
       if(unsub) unsub();
-      const ref = collection(db, "trades");
-      const q = query(ref, where("ownerUid","==",uid));
+      const ref = collection(db,"trades");
+      const q = query(ref, where("ownerUid","==",uid), orderBy("entryDate","asc"));
 
       $("add-form").onsubmit = async (e)=>{
-        e.preventDefault();
-        $("form-msg").textContent="";
-        const type = $("type").value;
-        const assetType = $("assetType").value;
-        const action = $("action").value;
-        const symbol = ($("symbol").value||"").toUpperCase();
-        const entryDate = $("entryDate").value || todayISO();
-        const size = +($("size").value||0);
-        const entry = +($("entryPrice").value||0);
-        const exit  = +($("exitPrice").value||0);
+        e.preventDefault(); $("form-msg").textContent="";
+        const type=$("type").value;
+        const assetType=$("assetType").value;
+        const action=$("action").value;
+        const symbol=($("symbol").value||"").toUpperCase();
+        const entryDate=$("entryDate").value||todayISO();
+        const size=+($("size").value||0);
+        const entry=+($("entryPrice").value||0);
+        const exit=+($("exitPrice").value||0);
 
-        if(type==="Trade" && (!symbol || size<=0)) { $("form-msg").textContent="Invalid trade"; return; }
-        if(type==="Deposit" && entry<=0) { $("form-msg").textContent="Invalid deposit"; return; }
+        if(type==="Trade" && (!symbol || size<=0)) return $("form-msg").textContent="Invalid trade";
+        if(type==="Deposit" && entry<=0) return $("form-msg").textContent="Invalid deposit";
 
         let pnl=0,pct=0;
         if(type==="Trade"){
           const dir=(action==="Short"||action==="Put")?-1:1;
-          pnl=(exit-entry)*size*dir;
-          pct=entry>0?(pnl/(entry*size))*100:0;
+          pnl=(exit-entry)*size*dir; pct = entry>0 ? (pnl/(entry*size))*100 : 0;
         }
 
         try{
           await addDoc(ref,{
-            ownerUid:uid,
-            type, assetType, action, symbol,
-            entryDate, size,
-            entryPrice:entry, exitPrice:exit,
+            ownerUid:uid, type, assetType, action, symbol,
+            entryDate, size, entryPrice:entry, exitPrice:exit,
             pnl:+pnl.toFixed(2), pnlPct:+pct.toFixed(2),
-            timestamp:new Date().toISOString()
+            createdAt:new Date().toISOString()
           });
           e.target.reset();
-        }catch(err){
-          $("form-msg").textContent = "Error: " + (err.message || err);
-        }
+        }catch(err){ $("form-msg").textContent="Error: "+(err.message||err); }
       };
 
       unsub = onSnapshot(q, snap=>{
-        const list=[]; snap.forEach(d=>list.push({id:d.id,...d.data()}));
-        render(list.sort((a,b)=>new Date(a.entryDate)-new Date(b.entryDate)));
+        const rows=[]; snap.forEach(d=>rows.push({id:d.id,...d.data()}));
+        render(rows);
       });
     }
 
@@ -271,13 +253,12 @@
 
       if(!list.length){
         show(empty);
-        $("total-pnl").textContent="$0.00";
+        $("total-pnl").textContent=money(0);
         $("win-rate").textContent="0%";
         $("total-trades").textContent="0";
-        $("avg-pnl").textContent="$0.00";
-        $("pnl-14d").textContent="$0.00";
-        if(pnlChart){ pnlChart.data.labels=[]; pnlChart.data.datasets[0].data=[]; pnlChart.update(); }
-        if(outcomesChart){ outcomesChart.data.datasets[0].data=[0,0,0]; outcomesChart.update(); }
+        $("avg-pnl").textContent=money(0);
+        $("pnl-14d").textContent=money(0);
+        updateCharts([],[]);
         return;
       }
       hide(empty);
@@ -285,19 +266,22 @@
       let running=0,w=0,l=0,z=0,last14=0;
       const cutISO=new Date(Date.now()-14*864e5).toISOString().split("T")[0];
 
+      const labels=[], cum=[];
       list.forEach(t=>{
-        running+=t.pnl||0;
-        if(t.type==="Trade" && t.entryDate>=cutISO) last14+=t.pnl||0;
-
+        running += t.pnl||0;
         const cls=(t.pnl||0)>=0?"text-green-600":"text-red-600";
         const result = t.type!=="Trade" ? "-" : t.pnl>0?"Win":t.pnl<0?"Loss":"Breakeven";
         if(result==="Win")w++; if(result==="Loss")l++; if(result==="Breakeven")z++;
+        if(t.type==="Trade" && t.entryDate>=cutISO) last14+=t.pnl||0;
+
+        labels.push(`${t.entryDate} ${t.symbol||""}`.trim());
+        cum.push(running);
 
         body.insertAdjacentHTML("beforeend",`
           <tr class="hover:bg-gray-50">
-            <td class="px-3 py-2">${t.entryDate}</td>
-            <td class="px-3 py-2">${t.type}</td>
-            <td class="px-3 py-2 font-semibold text-indigo-600">${t.symbol||""}</td>
+            <td class="px-3 py-2">${t.entryDate||"-"}</td>
+            <td class="px-3 py-2">${t.type||"-"}</td>
+            <td class="px-3 py-2 font-semibold text-indigo-600">${t.symbol||"-"}</td>
             <td class="px-3 py-2">${t.assetType||"-"}</td>
             <td class="px-3 py-2 text-right">${money(t.entryPrice)}</td>
             <td class="px-3 py-2 text-right">${money(t.exitPrice)}</td>
@@ -312,9 +296,9 @@
         `);
       });
 
-      const trades=list.filter(x=>x.type==="Trade");
-      const total=list.reduce((a,b)=>a+(b.pnl||0),0);
-      const wr = trades.length?(w/trades.length)*100:0;
+      const trades = list.filter(x=>x.type==="Trade");
+      const total = list.reduce((a,b)=>a+(b.pnl||0),0);
+      const wr = trades.length ? (w/trades.length)*100 : 0;
 
       $("pnl-14d").textContent=money(last14);
       $("win-rate").textContent=wr.toFixed(1)+"%";
@@ -322,39 +306,33 @@
       $("total-pnl").textContent=money(total);
       $("avg-pnl").textContent=money(total/(trades.length||1));
 
-      /* Charts */
-      const labels=list.map(t=>`${t.entryDate} ${t.symbol||""}`.trim());
-      let r=0; const cum=list.map(t=>r+=(t.pnl||0));
+      updateCharts(labels,cum,w,l,z);
+    }
 
-      if(!pnlChart){
-        pnlChart=new Chart($("pnlChart"),{
+    function updateCharts(labels,cum,w=0,l=0,z=0){
+      // Line
+      if(!window._pnlChart){
+        window._pnlChart = new Chart(document.getElementById("pnlChart"),{
           type:"line",
-          data:{labels,datasets:[{label:"Cumulative P&L",data:cum,borderColor:"#10b981"}]},
+          data:{labels,datasets:[{label:"Cumulative P&L",data:cum,borderColor:"#10b981",fill:false}]},
           options:{responsive:true,maintainAspectRatio:false}
         });
       }else{
-        pnlChart.data.labels=labels;
-        pnlChart.data.datasets[0].data=cum;
-        pnlChart.update();
+        _pnlChart.data.labels=labels;
+        _pnlChart.data.datasets[0].data=cum;
+        _pnlChart.update();
       }
-
-      if(!outcomesChart){
-        outcomesChart=new Chart($("outcomesChart"),{
+      // Doughnut
+      if(!window._outChart){
+        window._outChart = new Chart(document.getElementById("outcomesChart"),{
           type:"doughnut",
           data:{labels:["Win","Loss","Breakeven"],datasets:[{data:[w,l,z],backgroundColor:["#10b981","#ef4444","#f59e0b"]}]},
           options:{responsive:true,maintainAspectRatio:false}
         });
       }else{
-        outcomesChart.data.datasets[0].data=[w,l,z];
-        outcomesChart.update();
+        _outChart.data.datasets[0].data=[w,l,z];
+        _outChart.update();
       }
-    }
-
-    /* PWA: register service worker (best-effort) */
-    if ("serviceWorker" in navigator) {
-      window.addEventListener("load", () => {
-        navigator.serviceWorker.register("service-worker.js").catch(()=>{});
-      });
     }
   </script>
 </body>
