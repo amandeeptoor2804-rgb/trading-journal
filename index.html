@@ -2,34 +2,34 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
   <title>Trading Performance Journal</title>
+
+  <!-- PWA -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#4f46e5">
+  <!-- (If you have icons in /icons/, these are nice-to-have) -->
+  <link rel="icon" sizes="192x192" href="icons/icon-192.png">
+  <link rel="icon" sizes="512x512" href="icons/icon-512.png">
+  <link rel="apple-touch-icon" href="icons/icon-512.png">
 
   <!-- Tailwind + ChartJS -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
 
-  <!-- PWA -->
-  <link rel="manifest" href="manifest.json" />
-  <meta name="theme-color" content="#111827" />
-
   <style>
-    /* Mobile-friendly momentum scrolling */
     #trade-list-container { -webkit-overflow-scrolling: touch; }
-    /* Simple spinner color */
     .spinner { border-top-color:#4f46e5 }
-    /* Narrow table cells on phones */
-    th, td { white-space: nowrap; }
   </style>
 </head>
 
 <body class="bg-gray-50 text-gray-800 min-h-screen p-4 md:p-8">
 
-  <!-- Loading Overlay -->
+  <!-- Loading -->
   <div id="loading" class="fixed inset-0 hidden items-center justify-center bg-gray-50 z-50">
     <div class="text-center p-8 bg-white shadow-xl rounded-xl">
       <div class="spinner animate-spin rounded-full h-12 w-12 border-4 border-indigo-500 border-gray-200 mx-auto mb-4"></div>
-      <p id="loading-msg" class="text-indigo-600 font-semibold">Loading…</p>
+      <p id="loading-msg" class="text-indigo-600 font-semibold">Loading...</p>
     </div>
   </div>
 
@@ -47,68 +47,65 @@
 
   <!-- App -->
   <div id="app" class="max-w-7xl mx-auto hidden">
-    <header class="mb-6 p-4 bg-white shadow-lg rounded-xl flex items-center justify-between">
-      <div class="flex items-center gap-3">
-        <img src="icons/at-192.png" alt="icon" class="w-8 h-8 rounded" />
-        <div>
-          <h1 class="text-2xl md:text-3xl font-bold text-indigo-700">Trading Performance Journal</h1>
-          <p class="text-xs md:text-sm text-gray-500">Log trades & deposits · See P&L, win rate, and charts</p>
-          <p id="auth-status" class="text-xs mt-2 text-indigo-400"></p>
-        </div>
+    <header class="mb-8 p-4 bg-white shadow-lg rounded-xl flex items-center justify-between">
+      <div>
+        <h1 class="text-3xl font-bold text-indigo-700 mb-1">Trading Performance Journal</h1>
+        <p class="text-sm text-gray-500">Log trades & performance metrics</p>
+        <p id="auth-status" class="text-xs mt-2 text-indigo-400"></p>
       </div>
-      <div class="flex items-center gap-3">
-        <button id="install-btn" class="hidden px-3 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-lg">Install App</button>
-        <button id="logout" class="px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg">Log out</button>
-      </div>
+      <button id="logout" class="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg">Log Out</button>
     </header>
 
-    <!-- Metric Cards -->
-    <div class="grid grid-cols-2 md:grid-cols-5 gap-3 md:gap-4 mb-6">
-      <div class="bg-white p-4 rounded-xl shadow-sm border-l-4 border-indigo-500">
-        <p class="text-[10px] md:text-xs text-gray-500 uppercase">Total P&L</p>
-        <p id="total-pnl" class="text-xl md:text-2xl font-bold mt-1">$0.00</p>
+    <!-- Metrics -->
+    <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
+      <div class="bg-white p-4 rounded-xl shadow-lg border-l-4 border-indigo-500">
+        <p class="text-xs text-gray-500 uppercase">Total P&L</p>
+        <p id="total-pnl" class="text-2xl font-bold mt-1">$0.00</p>
       </div>
-      <div class="bg-white p-4 rounded-xl shadow-sm border-l-4 border-green-500">
-        <p class="text-[10px] md:text-xs text-gray-500 uppercase">Win Rate</p>
-        <p id="win-rate" class="text-xl md:text-2xl font-bold mt-1">0%</p>
+      <div class="bg-white p-4 rounded-xl shadow-lg border-l-4 border-green-500">
+        <p class="text-xs text-gray-500 uppercase">Win Rate</p>
+        <p id="win-rate" class="text-2xl font-bold mt-1">0%</p>
       </div>
-      <div class="bg-white p-4 rounded-xl shadow-sm border-l-4 border-yellow-500">
-        <p class="text-[10px] md:text-xs text-gray-500 uppercase">Total Trades</p>
-        <p id="total-trades" class="text-xl md:text-2xl font-bold mt-1">0</p>
+      <div class="bg-white p-4 rounded-xl shadow-lg border-l-4 border-yellow-500">
+        <p class="text-xs text-gray-500 uppercase">Total Trades</p>
+        <p id="total-trades" class="text-2xl font-bold mt-1">0</p>
       </div>
-      <div class="bg-white p-4 rounded-xl shadow-sm border-l-4 border-red-500">
-        <p class="text-[10px] md:text-xs text-gray-500 uppercase">Average P&L</p>
-        <p id="avg-pnl" class="text-xl md:text-2xl font-bold mt-1">$0.00</p>
+      <div class="bg-white p-4 rounded-xl shadow-lg border-l-4 border-red-500">
+        <p class="text-xs text-gray-500 uppercase">Average P&L</p>
+        <p id="avg-pnl" class="text-2xl font-bold mt-1">$0.00</p>
       </div>
-      <div class="bg-white p-4 rounded-xl shadow-sm border-l-4 border-indigo-600">
-        <p class="text-[10px] md:text-xs text-gray-500 uppercase">Last 14 Days</p>
-        <p id="pnl-14d" class="text-xl md:text-2xl font-bold mt-1">$0.00</p>
+      <div class="bg-white p-4 rounded-xl shadow-lg border-l-4 border-indigo-600">
+        <p class="text-xs text-gray-500 uppercase">Last 14 Days</p>
+        <p id="pnl-14d" class="text-2xl font-bold mt-1">$0.00</p>
       </div>
     </div>
 
     <!-- Charts -->
-    <section class="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8 mb-8">
-      <div class="bg-white p-4 md:p-6 rounded-xl shadow-sm lg:col-span-2">
-        <h2 class="text-base md:text-lg font-semibold text-indigo-600 mb-3">Cumulative P&L</h2>
+    <section class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+      <div class="bg-white p-6 rounded-xl shadow-lg lg:col-span-2">
+        <h2 class="text-lg font-semibold text-indigo-600 mb-4">Cumulative P&L</h2>
         <div class="relative h-64 md:h-96"><canvas id="pnlChart"></canvas></div>
       </div>
-      <div class="bg-white p-4 md:p-6 rounded-xl shadow-sm">
-        <h2 class="text-base md:text-lg font-semibold text-indigo-600 mb-3">Trade Outcomes</h2>
+      <div class="bg-white p-6 rounded-xl shadow-lg">
+        <h2 class="text-lg font-semibold text-indigo-600 mb-4">Trade Outcomes</h2>
         <div class="relative h-64"><canvas id="outcomesChart"></canvas></div>
       </div>
     </section>
 
     <!-- Add Entry -->
-    <section class="bg-white p-4 md:p-6 rounded-xl shadow-sm mb-8">
-      <h2 class="text-base md:text-lg font-semibold text-indigo-600 mb-4">Log New Entry</h2>
-      <form id="add-form" class="grid grid-cols-2 md:grid-cols-8 gap-3 md:gap-4">
+    <section class="bg-white p-6 rounded-xl shadow-lg mb-8">
+      <h2 class="text-lg font-semibold text-indigo-600 mb-4">Log New Entry</h2>
+      <form id="add-form" class="grid grid-cols-2 md:grid-cols-8 gap-4">
         <select id="type" class="p-3 border rounded-lg">
           <option>Trade</option><option>Deposit</option>
         </select>
 
-        <!-- NEW: Asset Type -->
         <select id="assetType" class="p-3 border rounded-lg">
           <option>Stock</option><option>Crypto</option><option>Forex</option>
+        </select>
+
+        <select id="action" class="p-3 border rounded-lg">
+          <option>Long</option><option>Short</option><option>Call</option><option>Put</option>
         </select>
 
         <input id="symbol" placeholder="Symbol" class="p-3 border rounded-lg col-span-2" />
@@ -116,25 +113,23 @@
         <input id="size" type="number" placeholder="Size" class="p-3 border rounded-lg" />
         <input id="entryPrice" type="number" step="0.01" placeholder="Entry / Amount" class="p-3 border rounded-lg" />
         <input id="exitPrice" type="number" step="0.01" placeholder="Exit (for trades)" class="p-3 border rounded-lg" />
-        <select id="action" class="p-3 border rounded-lg">
-          <option>Long</option><option>Short</option><option>Call</option><option>Put</option>
-        </select>
+
         <button class="bg-indigo-600 text-white rounded-lg font-bold py-3 col-span-2 md:col-span-1">Add</button>
       </form>
       <div id="form-msg" class="text-red-600 text-xs mt-2"></div>
     </section>
 
     <!-- History -->
-    <section class="bg-white p-4 md:p-6 rounded-xl shadow-sm">
-      <h2 class="text-base md:text-lg font-semibold text-indigo-600 mb-3">Transaction History</h2>
+    <section class="bg-white p-6 rounded-xl shadow-lg">
+      <h2 class="text-lg font-semibold text-indigo-600 mb-4">Transaction History</h2>
       <div id="trade-list-container" class="overflow-x-auto max-h-[420px]">
-        <table class="min-w-full divide-y divide-gray-200 text-xs md:text-sm">
+        <table class="min-w-full divide-y divide-gray-200 text-sm">
           <thead class="bg-gray-50">
             <tr>
               <th class="px-3 py-2 text-left">Date</th>
               <th class="px-3 py-2 text-left">Type</th>
-              <th class="px-3 py-2 text-left">Asset Type</th>
               <th class="px-3 py-2 text-left">Asset</th>
+              <th class="px-3 py-2 text-left">Asset Type</th>
               <th class="px-3 py-2 text-right">Entry</th>
               <th class="px-3 py-2 text-right">Exit</th>
               <th class="px-3 py-2 text-right">Size</th>
@@ -143,7 +138,7 @@
               <th class="px-3 py-2 text-right">P&L %</th>
               <th class="px-3 py-2 text-right">Cum P&L</th>
               <th class="px-3 py-2 text-left">Result</th>
-              <th class="px-3 py-2"></th>
+              <th></th>
             </tr>
           </thead>
           <tbody id="trade-list"></tbody>
@@ -155,132 +150,91 @@
 
   <!-- SCRIPT -->
   <script type="module">
-    /***** Firebase imports *****/
+    /* Firebase */
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js";
     import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-auth.js";
     import { getFirestore, collection, addDoc, deleteDoc, doc, onSnapshot, query, where } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
 
-    /***** CONFIG: Set your allowed email *****/
-    const ALLOWED_EMAIL = "YOUR_EMAIL_HERE@example.com"; // <-- change this to your email
+    /* Your allowed email for login UI */
+    const ALLOWED_EMAIL = "kaur.2804amandeep@gmail.com";
 
-    /***** CONFIG: Paste your Firebase Web Config here *****/
+    /* Your REAL Firebase config */
     const firebaseConfig = {
-      apiKey: "PASTE_API_KEY",
-      authDomain: "PASTE_PROJECT_ID.firebaseapp.com",
-      projectId: "PASTE_PROJECT_ID",
-      storageBucket: "PASTE_PROJECT_ID.appspot.com",
-      messagingSenderId: "PASTE_SENDER_ID",
-      appId: "PASTE_APP_ID"
+      apiKey: "AIzaSyB5rvkKPst6V9-7HoqK1f27jQj6x7f8LiA",
+      authDomain: "trading-journal-da4eb.firebaseapp.com",
+      projectId: "trading-journal-da4eb",
+      storageBucket: "trading-journal-da4eb.appspot.com",
+      messagingSenderId: "50906470929",
+      appId: "1:50906470929:web:b9ad784e9ae86c06d42fb0",
+      measurementId: "G-WR261BKTXL"
     };
 
-    /***** Init *****/
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
-    const db   = getFirestore(app);
+    const db = getFirestore(app);
 
-    /***** Helpers *****/
+    /* Helpers */
     const $ = id => document.getElementById(id);
     const show = el => el.classList.remove("hidden");
     const hide = el => el.classList.add("hidden");
-    const money = n => new Intl.NumberFormat("en-US",{style:"currency",currency:"USD"}).format(Number(n)||0);
+    const money = n => new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(Number(n)||0);
     const todayISO = () => {
-      const d=new Date();
-      return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+      const d=new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
     };
+    const setLoading = m => { $("loading-msg").textContent=m; show($("loading")); };
+    const clearLoading = () => hide($("loading"));
 
-    /* Loading overlay */
-    function setLoading(msg){ $("loading-msg").textContent = msg; show($("loading")); }
-    function clearLoading(){ hide($("loading")); }
-
-    /* PWA install prompt */
-    let deferredPrompt = null;
-    window.addEventListener('beforeinstallprompt', (e) => {
-      e.preventDefault();
-      deferredPrompt = e;
-      show($("install-btn"));
-    });
-    $("install-btn").addEventListener("click", async () => {
-      if (!deferredPrompt) return;
-      deferredPrompt.prompt();
-      deferredPrompt = null;
-      hide($("install-btn"));
-    });
-
-    /* Login form */
-    setLoading("Checking session…");
+    /* Auth UI */
+    setLoading("Checking session...");
     $("login-form").addEventListener("submit", async (e)=>{
       e.preventDefault();
       $("login-msg").textContent = "";
       try {
         const email = $("email").value.trim();
         const pass  = $("password").value.trim();
-        const cred  = await signInWithEmailAndPassword(auth,email,pass);
-        if (cred.user.email !== ALLOWED_EMAIL) {
-          $("login-msg").textContent = "Not authorized for this journal.";
+        const cred = await signInWithEmailAndPassword(auth,email,pass);
+        if(cred.user.email !== ALLOWED_EMAIL){
+          $("login-msg").textContent="Not authorized";
           await signOut(auth);
           return;
         }
-      } catch(err) {
-        $("login-msg").textContent = err.message;
-      }
+      }catch(err){ $("login-msg").textContent = "Firebase: " + (err.message || err.code); }
     });
-
     $("logout").onclick = ()=>signOut(auth);
 
     onAuthStateChanged(auth, (user)=>{
       clearLoading();
       if(user && user.email === ALLOWED_EMAIL){
         $("auth-status").textContent = "Signed in as: "+user.email;
-        hide($("login"));
-        show($("app"));
-        startApp(user.uid);
+        hide($("login")); show($("app")); boot(user.uid);
       }else{
-        show($("login"));
-        hide($("app"));
+        show($("login")); hide($("app"));
       }
     });
 
-    /* MAIN APP */
-    let unsubscribe = null;
-    let pnlChart = null;
-    let outcomesChart = null;
+    /* App logic */
+    let unsub = null, pnlChart=null, outcomesChart=null;
 
-    function destroyCharts() {
-      if (pnlChart) { pnlChart.destroy(); pnlChart = null; }
-      if (outcomesChart) { outcomesChart.destroy(); outcomesChart = null; }
-    }
-
-    function startApp(uid){
-      if (unsubscribe) unsubscribe();
-
+    function boot(uid){
+      if(unsub) unsub();
       const ref = collection(db, "trades");
-      const q = query(ref, where("ownerUid","==",uid)); // SECURITY: owner filter
+      const q = query(ref, where("ownerUid","==",uid));
 
-      // Submit new entry
       $("add-form").onsubmit = async (e)=>{
         e.preventDefault();
-        $("form-msg").textContent = "";
-
-        const type      = $("type").value;
+        $("form-msg").textContent="";
+        const type = $("type").value;
         const assetType = $("assetType").value;
-        const symbol    = ($("symbol").value||"").toUpperCase();
+        const action = $("action").value;
+        const symbol = ($("symbol").value||"").toUpperCase();
         const entryDate = $("entryDate").value || todayISO();
-        const size      = +($("size").value||0);
-        const entry     = +($("entryPrice").value||0);
-        const exit      = +($("exitPrice").value||0);
-        const action    = $("action").value;
+        const size = +($("size").value||0);
+        const entry = +($("entryPrice").value||0);
+        const exit  = +($("exitPrice").value||0);
 
-        // Validate
-        if(type==="Trade" && (!symbol || size<=0)){
-          $("form-msg").textContent="Invalid trade: symbol & size required";
-          return;
-        }
-        if(type==="Deposit" && entry<=0){
-          $("form-msg").textContent="Invalid deposit: enter amount in Entry / Amount";
-          return;
-        }
+        if(type==="Trade" && (!symbol || size<=0)) { $("form-msg").textContent="Invalid trade"; return; }
+        if(type==="Deposit" && entry<=0) { $("form-msg").textContent="Invalid deposit"; return; }
 
-        // Compute P&L only for trades
         let pnl=0,pct=0;
         if(type==="Trade"){
           const dir=(action==="Short"||action==="Put")?-1:1;
@@ -289,160 +243,114 @@
         }
 
         try{
-          await addDoc(ref, {
-            ownerUid: uid,
+          await addDoc(ref,{
+            ownerUid:uid,
             type, assetType, action, symbol,
-            entryDate,
-            size,
-            entryPrice: entry,
-            exitPrice: exit,
-            pnl: +pnl.toFixed(2),
-            pnlPct: +pct.toFixed(2),
-            timestamp: new Date().toISOString()
+            entryDate, size,
+            entryPrice:entry, exitPrice:exit,
+            pnl:+pnl.toFixed(2), pnlPct:+pct.toFixed(2),
+            timestamp:new Date().toISOString()
           });
           e.target.reset();
-        } catch(err){
-          $("form-msg").textContent = "Error: "+err.message;
+        }catch(err){
+          $("form-msg").textContent = "Error: " + (err.message || err);
         }
       };
 
-      // Live view
-      unsubscribe = onSnapshot(q, snap=>{
-        const list=[]; snap.forEach(d=>list.push({id:d.id, ...d.data()}));
-        // Sort stable by entryDate then timestamp
-        const sorted = list.sort((a,b)=>{
-          const da = (a.entryDate||"") + (a.timestamp||"");
-          const db = (b.entryDate||"") + (b.timestamp||"");
-          return da.localeCompare(db);
-        });
-        render(sorted);
+      unsub = onSnapshot(q, snap=>{
+        const list=[]; snap.forEach(d=>list.push({id:d.id,...d.data()}));
+        render(list.sort((a,b)=>new Date(a.entryDate)-new Date(b.entryDate)));
       });
     }
 
     window.delTrade = async(id)=>{ try{ await deleteDoc(doc(db,"trades",id)); }catch(e){ alert(e.message);} };
 
     function render(list){
-      const body = $("trade-list"); body.innerHTML = "";
-      const empty= $("empty");
+      const body=$("trade-list"); body.innerHTML="";
+      const empty=$("empty");
 
-      // Reset (important to stop “drifting”)
-      let running = 0;
-      let wins=0, losses=0, evens=0;
-      let last14 = 0;
-      const cutISO = new Date(Date.now()-14*864e5).toISOString().split("T")[0];
-
-      if (!list.length) {
+      if(!list.length){
         show(empty);
-        // clear cards
         $("total-pnl").textContent="$0.00";
         $("win-rate").textContent="0%";
         $("total-trades").textContent="0";
         $("avg-pnl").textContent="$0.00";
         $("pnl-14d").textContent="$0.00";
-        // clear charts
-        destroyCharts();
+        if(pnlChart){ pnlChart.data.labels=[]; pnlChart.data.datasets[0].data=[]; pnlChart.update(); }
+        if(outcomesChart){ outcomesChart.data.datasets[0].data=[0,0,0]; outcomesChart.update(); }
         return;
       }
       hide(empty);
 
-      // rows
+      let running=0,w=0,l=0,z=0,last14=0;
+      const cutISO=new Date(Date.now()-14*864e5).toISOString().split("T")[0];
+
       list.forEach(t=>{
-        // Cumulative P&L should only include trades' P&L (deposits have 0 by design)
-        running += Number.isFinite(t.pnl) ? t.pnl : 0;
+        running+=t.pnl||0;
+        if(t.type==="Trade" && t.entryDate>=cutISO) last14+=t.pnl||0;
 
-        if(t.type==="Trade" && (t.entryDate||"") >= cutISO) last14 += t.pnl||0;
+        const cls=(t.pnl||0)>=0?"text-green-600":"text-red-600";
+        const result = t.type!=="Trade" ? "-" : t.pnl>0?"Win":t.pnl<0?"Loss":"Breakeven";
+        if(result==="Win")w++; if(result==="Loss")l++; if(result==="Breakeven")z++;
 
-        const cls = (t.pnl||0) >= 0 ? "text-green-600" : "text-red-600";
-        const result = t.type!=="Trade" ? "-" : t.pnl>0 ? "Win" : t.pnl<0 ? "Loss" : "Breakeven";
-        if(result==="Win") wins++;
-        if(result==="Loss") losses++;
-        if(result==="Breakeven") evens++;
-
-        body.insertAdjacentHTML("beforeend", `
+        body.insertAdjacentHTML("beforeend",`
           <tr class="hover:bg-gray-50">
-            <td class="px-3 py-2">${t.entryDate||"—"}</td>
-            <td class="px-3 py-2">${t.type||"—"}</td>
-            <td class="px-3 py-2">${t.assetType||"—"}</td>
-            <td class="px-3 py-2 font-semibold text-indigo-600">${t.symbol||"—"}</td>
+            <td class="px-3 py-2">${t.entryDate}</td>
+            <td class="px-3 py-2">${t.type}</td>
+            <td class="px-3 py-2 font-semibold text-indigo-600">${t.symbol||""}</td>
+            <td class="px-3 py-2">${t.assetType||"-"}</td>
             <td class="px-3 py-2 text-right">${money(t.entryPrice)}</td>
             <td class="px-3 py-2 text-right">${money(t.exitPrice)}</td>
-            <td class="px-3 py-2 text-right">${Number.isFinite(t.size)?t.size:0}</td>
-            <td class="px-3 py-2">${t.action||"—"}</td>
+            <td class="px-3 py-2 text-right">${t.size||0}</td>
+            <td class="px-3 py-2">${t.action||"-"}</td>
             <td class="px-3 py-2 text-right ${cls} font-semibold">${money(t.pnl)}</td>
-            <td class="px-3 py-2 text-right ${cls}">${(Number.isFinite(t.pnlPct)?t.pnlPct:0).toFixed(2)}%</td>
+            <td class="px-3 py-2 text-right ${cls}">${(t.pnlPct||0).toFixed(2)}%</td>
             <td class="px-3 py-2 text-right">${money(running)}</td>
             <td class="px-3 py-2">${result}</td>
-            <td class="px-3 py-2 text-right">
-              <button class="text-red-600" onclick="delTrade('${t.id}')">X</button>
-            </td>
+            <td class="px-3 py-2 text-right"><button class="text-red-600" onclick="delTrade('${t.id}')">X</button></td>
           </tr>
         `);
       });
 
-      // cards
-      const trades = list.filter(x=>x.type==="Trade");
-      const total  = list.reduce((a,b)=>a+(Number.isFinite(b.pnl)?b.pnl:0),0);
-      const wr     = trades.length ? (wins/trades.length)*100 : 0;
+      const trades=list.filter(x=>x.type==="Trade");
+      const total=list.reduce((a,b)=>a+(b.pnl||0),0);
+      const wr = trades.length?(w/trades.length)*100:0;
 
-      $("pnl-14d").textContent = money(last14);
-      $("win-rate").textContent= wr.toFixed(1)+"%";
-      $("total-trades").textContent= String(trades.length);
-      $("total-pnl").textContent = money(total);
-      $("avg-pnl").textContent   = money(total/(trades.length||1));
+      $("pnl-14d").textContent=money(last14);
+      $("win-rate").textContent=wr.toFixed(1)+"%";
+      $("total-trades").textContent=String(trades.length);
+      $("total-pnl").textContent=money(total);
+      $("avg-pnl").textContent=money(total/(trades.length||1));
 
-      // charts
-      renderCharts(trades);
-    }
+      /* Charts */
+      const labels=list.map(t=>`${t.entryDate} ${t.symbol||""}`.trim());
+      let r=0; const cum=list.map(t=>r+=(t.pnl||0));
 
-    function renderCharts(trades){
-      // Build sorted trades (only trades)
-      const tSorted = trades.slice().sort((a,b)=>{
-        const da = (a.entryDate||"") + (a.timestamp||"");
-        const db = (b.entryDate||"") + (b.timestamp||"");
-        return da.localeCompare(db);
-      });
-
-      const labels = tSorted.map(t => `${t.entryDate} ${t.symbol||""}`.trim());
-      let r=0;
-      const cum = tSorted.map(t => (r += (Number.isFinite(t.pnl)?t.pnl:0)));
-
-      const w = tSorted.filter(t=>t.pnl>0).length;
-      const l = tSorted.filter(t=>t.pnl<0).length;
-      const z = tSorted.filter(t=>t.pnl===0).length;
-
-      // If no trades, destroy charts and return safely
-      if (tSorted.length === 0) {
-        destroyCharts();
-        return;
-      }
-
-      // P&L chart
-      if (!pnlChart) {
-        pnlChart = new Chart($("pnlChart"),{
+      if(!pnlChart){
+        pnlChart=new Chart($("pnlChart"),{
           type:"line",
-          data:{ labels, datasets:[{ label:"Cumulative P&L", data:cum, borderColor:"#10b981", backgroundColor:"rgba(16,185,129,0.1)", fill:true, tension:0.3, pointRadius:2 }]},
-          options:{ responsive:true, maintainAspectRatio:false, plugins:{ legend:{display:false} } }
+          data:{labels,datasets:[{label:"Cumulative P&L",data:cum,borderColor:"#10b981"}]},
+          options:{responsive:true,maintainAspectRatio:false}
         });
-      } else {
-        pnlChart.data.labels = labels;
-        pnlChart.data.datasets[0].data = cum;
+      }else{
+        pnlChart.data.labels=labels;
+        pnlChart.data.datasets[0].data=cum;
         pnlChart.update();
       }
 
-      // Outcomes doughnut
-      if (!outcomesChart) {
-        outcomesChart = new Chart($("outcomesChart"),{
+      if(!outcomesChart){
+        outcomesChart=new Chart($("outcomesChart"),{
           type:"doughnut",
-          data:{ labels:["Win","Loss","Breakeven"], datasets:[{ data:[w,l,z], backgroundColor:["#10b981","#ef4444","#f59e0b"] }] },
-          options:{ responsive:true, maintainAspectRatio:false, plugins:{ legend:{ position:"bottom" } } }
+          data:{labels:["Win","Loss","Breakeven"],datasets:[{data:[w,l,z],backgroundColor:["#10b981","#ef4444","#f59e0b"]}]},
+          options:{responsive:true,maintainAspectRatio:false}
         });
-      } else {
-        outcomesChart.data.datasets[0].data = [w,l,z];
+      }else{
+        outcomesChart.data.datasets[0].data=[w,l,z];
         outcomesChart.update();
       }
     }
 
-    // Register service worker (PWA)
+    /* PWA: register service worker (best-effort) */
     if ("serviceWorker" in navigator) {
       window.addEventListener("load", () => {
         navigator.serviceWorker.register("service-worker.js").catch(()=>{});
