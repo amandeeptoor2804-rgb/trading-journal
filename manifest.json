@@ -1,6 +1,6 @@
 {
   "name": "Trading Performance Journal",
-  "short_name": "Journal",
+  "short_name": "Trading Journal",
   "start_url": "/trading-journal/",
   "scope": "/trading-journal/",
   "display": "standalone",
