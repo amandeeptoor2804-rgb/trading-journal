@@ -1,42 +1,41 @@
-// Simple cache-first for static assets
-const CACHE = "trading-journal-v1";
-const ASSETS = [
+// Simple offline cache (same-origin files)
+const CACHE = "tj-v1";
+const CORE_ASSETS = [
   "./",
   "./index.html",
-  "./manifest.json",
-  "./service-worker.js",
-  "./icons/at-192.png",
-  "./icons/at-512.png",
-  "https://cdn.tailwindcss.com",
-  "https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"
+  "./manifest.json"
+  // icons and other same-origin files can be added here if you like:
+  // "./icons/icon-192.png",
+  // "./icons/icon-512.png"
 ];
 
 self.addEventListener("install", (e) => {
-  e.waitUntil(
-    caches.open(CACHE).then((cache) => cache.addAll(ASSETS)).then(() => self.skipWaiting())
-  );
+  e.waitUntil(caches.open(CACHE).then((c) => c.addAll(CORE_ASSETS)));
 });
 
 self.addEventListener("activate", (e) => {
   e.waitUntil(
     caches.keys().then(keys =>
-      Promise.all(keys.map(k => (k === CACHE ? null : caches.delete(k))))
-    ).then(() => self.clients.claim())
+      Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))
+    )
   );
 });
 
 self.addEventListener("fetch", (e) => {
   const req = e.request;
+  // Only cache same-origin GET requests
+  if (req.method !== "GET" || new URL(req.url).origin !== location.origin) return;
   e.respondWith(
-    caches.match(req).then(cached => cached ||
-      fetch(req).then(res => {
-        // only cache GET static assets
-        if (req.method === "GET" && res.ok && req.url.startsWith(self.location.origin)) {
-          const copy = res.clone();
-          caches.open(CACHE).then(cache => cache.put(req, copy));
-        }
-        return res;
-      }).catch(() => cached)
+    caches.match(req).then(
+      (cached) =>
+        cached ||
+        fetch(req)
+          .then((res) => {
+            const copy = res.clone();
+            caches.open(CACHE).then((c) => c.put(req, copy));
+            return res;
+          })
+          .catch(() => cached)
     )
   );
 });
