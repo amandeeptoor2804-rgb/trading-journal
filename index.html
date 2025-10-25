@@ -5,77 +5,88 @@
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>Trading Journal</title>
 
-<link rel="manifest" href="manifest.json">
-<link rel="icon" type="image/svg+xml" href="icons/at-gold.svg" />
+<link rel="manifest" href="manifest.json" />
+<link rel="icon" href="icons/at-gold.svg" />
 
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
-  .spinner { border-top-color:#4f46e5; }
+  .card { @apply bg-white p-4 rounded-xl shadow-lg; }
 </style>
 </head>
-
 <body class="bg-gray-50 p-4">
 
-<!-- LOGIN SCREEN -->
-<div id="login-screen" class="max-w-sm mx-auto mt-16 bg-white p-6 shadow-xl rounded-xl">
-  <h1 class="text-2xl font-bold text-indigo-700 mb-4">Trading Journal Login</h1>
+<!-- LOGIN -->
+<div id="login-screen" class="max-w-sm mx-auto mt-16 card">
+  <h1 class="text-2xl font-bold text-indigo-700 mb-3">Trading Journal Login</h1>
   <form id="login-form" class="space-y-3">
-    <input id="email" type="email" placeholder="Email" required class="w-full p-3 border rounded-lg"/>
-    <input id="password" type="password" placeholder="Password" required class="w-full p-3 border rounded-lg"/>
-    <button id="btn-login" class="w-full bg-indigo-600 text-white p-3 rounded-lg font-bold">
-      Log In
-    </button>
+    <input id="email" type="email" placeholder="Email" required class="w-full p-3 border rounded-lg" />
+    <input id="password" type="password" placeholder="Password" required class="w-full p-3 border rounded-lg" />
+    <button type="submit" class="w-full bg-indigo-600 text-white p-3 rounded-lg font-bold">Log In</button>
   </form>
-  <p id="login-msg" class="text-red-600 text-sm mt-2"></p>
+  <p id="login-msg" class="text-sm mt-3 text-red-600"></p>
+  <p id="debug" class="text-xs mt-2 text-gray-400"></p>
 </div>
 
 <!-- APP -->
 <div id="app-screen" class="hidden">
-  <header class="flex justify-between items-center bg-white p-4 shadow-lg rounded-xl mb-6">
-    <h1 class="text-2xl font-bold text-indigo-700">Trading Performance Journal</h1>
-    <button id="btn-logout" class="bg-gray-200 px-4 py-2 rounded-lg">Log Out</button>
+  <header class="card mb-6 flex items-center justify-between">
+    <h2 class="text-xl font-bold text-indigo-700">Trading Performance Journal</h2>
+    <button id="btn-logout" class="px-4 py-2 bg-gray-100 rounded-lg">Log Out</button>
   </header>
 
-  <div class="grid grid-cols-2 gap-4 mb-4">
-    <div class="bg-white p-4 rounded-xl shadow-lg border-l-4 border-green-600">
-      <p>Total P&L</p><p id="total-pnl" class="font-bold">$0</p>
+  <!-- Metrics -->
+  <div class="grid grid-cols-2 gap-4 mb-6">
+    <div class="card border-l-4 border-green-600">
+      <p class="text-xs text-gray-500">Total P&L</p>
+      <p id="total-pnl" class="text-2xl font-bold">$0.00</p>
     </div>
-    <div class="bg-white p-4 rounded-xl shadow-lg border-l-4 border-indigo-600">
-      <p>Win Rate</p><p id="win-rate" class="font-bold">0%</p>
+    <div class="card border-l-4 border-indigo-600">
+      <p class="text-xs text-gray-500">Win Rate</p>
+      <p id="win-rate" class="text-2xl font-bold">0%</p>
     </div>
   </div>
 
-  <section class="bg-white p-6 rounded-xl shadow-lg mb-6">
-    <form id="add-form" class="grid grid-cols-2 gap-3">
-      <select id="type" class="border p-2 rounded-lg">
-        <option>Trade</option>
-        <option>Deposit</option>
+  <!-- Add entry -->
+  <section class="card mb-6">
+    <h3 class="font-semibold text-indigo-600 mb-3">Log New Entry</h3>
+    <form id="add-form" class="grid grid-cols-2 md:grid-cols-7 gap-3">
+      <select id="type" class="p-2 border rounded-lg">
+        <option>Trade</option><option>Deposit</option>
       </select>
-      <input id="symbol" class="border p-2 rounded-lg" placeholder="Symbol"/>
-      <input id="entryDate" type="date" class="border p-2 rounded-lg"/>
-      <input id="size" type="number" class="border p-2 rounded-lg" placeholder="Size"/>
-      <input id="entryPrice" type="number" step="0.01" class="border p-2 rounded-lg" placeholder="Entry/Amount"/>
-      <input id="exitPrice" type="number" step="0.01" class="border p-2 rounded-lg" placeholder="Exit if Trade"/>
-      <select id="action" class="border p-2 rounded-lg">
+      <input id="symbol" placeholder="Symbol" class="p-2 border rounded-lg col-span-2" />
+      <input id="entryDate" type="date" class="p-2 border rounded-lg" />
+      <input id="size" type="number" placeholder="Size" class="p-2 border rounded-lg" />
+      <input id="entryPrice" type="number" step="0.01" placeholder="Entry / Amount" class="p-2 border rounded-lg" />
+      <input id="exitPrice" type="number" step="0.01" placeholder="Exit (for trades)" class="p-2 border rounded-lg" />
+      <select id="action" class="p-2 border rounded-lg">
         <option>Long</option><option>Short</option><option>Call</option><option>Put</option>
       </select>
-      <button class="bg-indigo-600 text-white p-2 rounded-lg col-span-2">Add</button>
+      <button class="bg-indigo-600 text-white p-2 rounded-lg col-span-2 md:col-span-1">Add</button>
     </form>
-    <p id="form-msg" class="text-red-500 text-sm mt-2"></p>
+    <p id="form-msg" class="text-sm text-red-600 mt-2"></p>
   </section>
 
-  <section class="bg-white p-4 rounded-xl shadow-lg">
-    <h2 class="font-semibold text-indigo-600 mb-2">History</h2>
+  <!-- History -->
+  <section class="card">
+    <h3 class="font-semibold text-indigo-600 mb-3">Transaction History</h3>
     <table class="w-full text-sm">
-      <thead><tr><th>Date</th><th>Asset</th><th>P&L</th><th></th></tr></thead>
+      <thead>
+        <tr class="text-left">
+          <th>Date</th><th>Type</th><th>Asset</th><th class="text-right">Entry</th>
+          <th class="text-right">Exit</th><th class="text-right">Size</th><th>Action</th>
+          <th class="text-right">P&L</th><th class="text-right">P&L %</th><th class="text-right">Cum P&L</th><th>Result</th><th></th>
+        </tr>
+      </thead>
       <tbody id="trade-list"></tbody>
     </table>
+    <p id="empty" class="text-center text-gray-500 mt-3 hidden">No entries yet</p>
   </section>
 </div>
 
 <script type="module">
+/* ---------- Firebase ---------- */
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js";
 import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-auth.js";
 import { getFirestore, collection, addDoc, deleteDoc, doc, onSnapshot, query, where } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
@@ -88,60 +99,152 @@ const firebaseConfig = {
   messagingSenderId: "50906470929",
   appId: "1:50906470929:web:b9ad784e9ae86c06d42fb0"
 };
-
 const ALLOWED_EMAIL = "kaur.2804amandeep@gmail.com";
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
+/* ---------- Shortcuts ---------- */
 const $ = id => document.getElementById(id);
-const tradesRef = collection(db, "trades");
+const money = n => new Intl.NumberFormat("en-US",{style:"currency",currency:"USD"}).format(Number(n)||0);
+const todayISO = () => {
+  const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+};
 
-$("btn-login").onclick = e => e.target.blur();
-$("btn-login").addEventListener("click", async (e)=>{
+/* ---------- Login (FORM SUBMIT!) ---------- */
+$("login-form").addEventListener("submit", async (e) => {
   e.preventDefault();
-  const email = $("email").value;
-  const pass = $("password").value;
+  $("login-msg").textContent = ""; $("debug").textContent = "";
   try {
-    const cred = await signInWithEmailAndPassword(auth,email,pass);
-    if(cred.user.email !== ALLOWED_EMAIL){
+    const email = $("email").value.trim();
+    const pass  = $("password").value.trim();
+    const cred = await signInWithEmailAndPassword(auth, email, pass);
+    if (cred.user.email !== ALLOWED_EMAIL) {
       $("login-msg").textContent = "Not authorized";
-      signOut(auth);
+      await signOut(auth);
     }
-  } catch(err) { $("login-msg").textContent = err.message; }
-});
-
-$("btn-logout").addEventListener("click",()=>signOut(auth));
-
-onAuthStateChanged(auth,(user)=>{
-  if(user && user.email===ALLOWED_EMAIL){
-    $("login-screen").classList.add("hidden");
-    $("app-screen").classList.remove("hidden");
-    loadTrades(user.uid);
-  } else {
-    $("login-screen").classList.remove("hidden");
-    $("app-screen").classList.add("hidden");
+  } catch (err) {
+    $("login-msg").textContent = err.code || err.message;
+    $("debug").textContent = "Login failed — check Firebase Auth (Email/Password enabled? user exists?)";
   }
 });
 
-function loadTrades(uid){
-  const q = query(tradesRef,where("ownerUid","==",uid));
-  onSnapshot(q,(snap)=>{
-    $("trade-list").innerHTML="";
-    snap.forEach(d=>{
-      const t = d.data();
-      $("trade-list").insertAdjacentHTML("beforeend",`
-      <tr>
-        <td>${t.entryDate}</td><td>${t.symbol}</td>
-        <td>${t.pnl}</td>
-        <td><button onclick="del('${d.id}')">X</button></td>
-      </tr>`);
-    });
+/* ---------- Logout ---------- */
+$("btn-logout").addEventListener("click", () => signOut(auth));
+
+/* ---------- Auth State ---------- */
+onAuthStateChanged(auth, (user) => {
+  if (user && user.email === ALLOWED_EMAIL) {
+    $("login-screen").classList.add("hidden");
+    $("app-screen").classList.remove("hidden");
+    boot(user.uid);
+  } else {
+    $("app-screen").classList.add("hidden");
+    $("login-screen").classList.remove("hidden");
+  }
+});
+
+/* ---------- App ---------- */
+let unsub = null;
+function boot(uid) {
+  if (unsub) unsub();
+  const ref = collection(db, "trades");
+  const q = query(ref, where("ownerUid","==", uid));
+
+  // Add entry
+  $("add-form").onsubmit = async (e) => {
+    e.preventDefault();
+    $("form-msg").textContent = "";
+
+    const type = $("type").value;
+    const symbol = ($("symbol").value || "").toUpperCase();
+    const entryDate = $("entryDate").value || todayISO();
+    const size = +($("size").value || 0);
+    const entry = +($("entryPrice").value || 0);
+    const exit  = +($("exitPrice").value || 0);
+    const action = $("action").value;
+
+    if (type === "Trade" && (!symbol || size <= 0)) {
+      $("form-msg").textContent = "Invalid trade"; return;
+    }
+    if (type === "Deposit" && entry <= 0) {
+      $("form-msg").textContent = "Invalid deposit"; return;
+    }
+
+    let pnl = 0, pct = 0;
+    if (type === "Trade") {
+      const dir = (action === "Short" || action === "Put") ? -1 : 1;
+      pnl = (exit - entry) * size * dir;
+      pct = entry > 0 ? (pnl / (entry * size)) * 100 : 0;
+    }
+
+    try {
+      await addDoc(ref, {
+        ownerUid: uid,
+        type, action, symbol,
+        entryDate, size,
+        entryPrice: entry, exitPrice: exit,
+        pnl: +pnl.toFixed(2),
+        pnlPct: +pct.toFixed(2),
+        timestamp: new Date().toISOString()
+      });
+      e.target.reset();
+    } catch (err) {
+      $("form-msg").textContent = err.code || err.message;
+    }
+  };
+
+  // Live table
+  unsub = onSnapshot(q, (snap) => {
+    const list = [];
+    snap.forEach(d => list.push({ id: d.id, ...d.data() }));
+    render(list.sort((a,b)=> new Date(a.entryDate) - new Date(b.entryDate)));
   });
 }
 
-window.del = id => deleteDoc(doc(db,"trades",id));
+window.del = async (id) => {
+  try { await deleteDoc(doc(db,"trades",id)); }
+  catch (e) { alert(e.code || e.message); }
+};
+
+function render(list) {
+  const body = $("trade-list");
+  body.innerHTML = "";
+  if (!list.length) { $("empty").classList.remove("hidden"); return; }
+  $("empty").classList.add("hidden");
+
+  let run = 0, wins = 0, losses = 0, evens = 0;
+  list.forEach(t => {
+    run += t.pnl || 0;
+    const res = t.type!=="Trade" ? "-" : t.pnl>0?"Win":t.pnl<0?"Loss":"Breakeven";
+    if (res==="Win") wins++; if (res==="Loss") losses++; if (res==="Breakeven") evens++;
+
+    body.insertAdjacentHTML("beforeend", `
+      <tr class="border-t">
+        <td>${t.entryDate||"—"}</td>
+        <td>${t.type||"—"}</td>
+        <td class="font-semibold text-indigo-600">${t.symbol||"—"}</td>
+        <td class="text-right">${money(t.entryPrice)}</td>
+        <td class="text-right">${money(t.exitPrice)}</td>
+        <td class="text-right">${Number.isFinite(t.size)?t.size:0}</td>
+        <td>${t.action||"—"}</td>
+        <td class="text-right ${ (t.pnl||0)>=0?'text-green-600':'text-red-600' }">${money(t.pnl)}</td>
+        <td class="text-right">${Number.isFinite(t.pnlPct)?t.pnlPct.toFixed(2):"0.00"}%</td>
+        <td class="text-right">${money(run)}</td>
+        <td>${res}</td>
+        <td class="text-right"><button onclick="del('${t.id}')" class="text-red-600">X</button></td>
+      </tr>
+    `);
+  });
+
+  const trades = list.filter(x => x.type==="Trade");
+  const total = list.reduce((a,b)=>a+(b.pnl||0),0);
+  const wr = trades.length ? (wins/trades.length)*100 : 0;
+
+  $("total-pnl").textContent = money(total);
+  $("win-rate").textContent  = wr.toFixed(1) + "%";
+}
 </script>
 
 </body>
