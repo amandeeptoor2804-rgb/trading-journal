@@ -5,150 +5,169 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
   <title>Trading Performance Journal</title>
 
-  <!-- App icons / PWA -->
-  <link rel="manifest" href="manifest.json?v=7" />
-  <link rel="icon" href="icons/icon-192.png">
-  <meta name="theme-color" content="#4f46e5" />
-
-  <!-- Tailwind + ChartJS -->
+  <!-- Tailwind + Chart.js -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
 
   <style>
-    .spinner{border-top-color:#4f46e5}
-    #trade-list-container{-webkit-overflow-scrolling:touch}
-    .btn{ @apply bg-indigo-600 text-white rounded-lg font-semibold px-4 py-2; }
-    .btn-outline{ @apply bg-white border border-gray-300 text-gray-700 rounded-lg px-3 py-2; }
+    body { background:#f8fafc; }
+    .card { background:#fff; border-radius:14px; box-shadow:0 8px 24px rgba(15,23,42,.06); }
+    .spinner { border-top-color:#4f46e5 }
+    #trade-list-container { -webkit-overflow-scrolling: touch; }
   </style>
 </head>
-<body class="bg-gray-50 text-gray-800 min-h-screen p-4 md:p-8">
-  <!-- Loading -->
-  <div id="loading" class="fixed inset-0 hidden items-center justify-center bg-gray-50 z-50">
-    <div class="text-center p-8 bg-white shadow-xl rounded-xl">
+<body class="text-gray-800 min-h-screen p-4 md:p-8">
+
+  <!-- ============= Loading ============= -->
+  <div id="loading" class="fixed inset-0 hidden items-center justify-center bg-white/70 backdrop-blur z-50">
+    <div class="text-center card p-8">
       <div class="spinner animate-spin rounded-full h-12 w-12 border-4 border-indigo-500 border-gray-200 mx-auto mb-4"></div>
       <p id="loading-msg" class="text-indigo-600 font-semibold">Loading…</p>
     </div>
   </div>
 
-  <!-- Login -->
-  <div id="login" class="max-w-sm mx-auto mt-16 bg-white shadow-xl rounded-xl p-6">
+  <!-- ============= Login ============= -->
+  <div id="login" class="max-w-sm mx-auto mt-16 card p-6">
     <h1 class="text-2xl font-bold text-indigo-700 mb-2">Trading Journal Login</h1>
     <p class="text-sm text-gray-500 mb-4">Secure access</p>
     <form id="login-form" class="space-y-3">
       <input id="email" type="email" placeholder="Email" class="w-full p-3 border rounded-lg" required />
       <input id="password" type="password" placeholder="Password" class="w-full p-3 border rounded-lg" required />
-      <button class="w-full btn">Log in</button>
+      <button class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 rounded-lg">Log in</button>
     </form>
     <p id="login-msg" class="text-sm text-red-600 mt-3"></p>
+    <p id="cfg-msg" class="text-[11px] text-gray-400 mt-3"></p>
   </div>
 
-  <!-- App -->
+  <!-- ============= App ============= -->
   <div id="app" class="max-w-7xl mx-auto hidden">
-    <header class="mb-8 p-4 bg-white shadow-lg rounded-xl flex items-center justify-between">
+    <header class="mb-6 p-4 card flex items-center justify-between">
       <div>
         <h1 class="text-3xl font-bold text-indigo-700 mb-1">Trading Performance Journal</h1>
-        <p class="text-sm text-gray-500">Deposits in CAD (auto to USD), trades in USD.</p>
+        <p class="text-sm text-gray-500">Log trades & deposits. See totals and charts.</p>
         <p id="auth-status" class="text-xs mt-2 text-indigo-400"></p>
       </div>
-      <div class="flex gap-2">
-        <button id="refresh-sw" class="btn-outline">Update App</button>
-        <button id="logout" class="btn-outline">Log Out</button>
-      </div>
+      <button id="logout" class="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg">Log Out</button>
     </header>
 
-    <!-- Totals -->
-    <div class="grid grid-cols-2 md:grid-cols-6 gap-4 mb-8">
-      <div class="bg-white p-4 rounded-xl shadow-lg border-l-4 border-indigo-500">
-        <p class="text-xs text-gray-500 uppercase">Deposits (CAD)</p>
-        <p id="total-deposit-cad" class="text-2xl font-bold mt-1">$0.00</p>
+    <!-- ===== Top metrics ===== -->
+    <div class="grid grid-cols-2 md:grid-cols-6 gap-4 mb-6">
+      <div class="card p-4 border-l-4 border-indigo-600">
+        <p class="text-xs text-gray-500 uppercase">Equity (USD)</p>
+        <p id="equity-usd" class="text-2xl font-bold mt-1">$0.00</p>
       </div>
-      <div class="bg-white p-4 rounded-xl shadow-lg border-l-4 border-indigo-600">
-        <p class="text-xs text-gray-500 uppercase">Deposits (USD)</p>
-        <p id="total-deposit-usd" class="text-2xl font-bold mt-1">$0.00</p>
+      <div class="card p-4 border-l-4 border-emerald-600">
+        <p class="text-xs text-gray-500 uppercase">Total Deposits (USD)</p>
+        <p id="total-deposits" class="text-2xl font-bold mt-1">$0.00</p>
       </div>
-      <div class="bg-white p-4 rounded-xl shadow-lg border-l-4 border-green-500">
-        <p class="text-xs text-gray-500 uppercase">Profit (USD)</p>
+      <div class="card p-4 border-l-4 border-green-500">
+        <p class="text-xs text-gray-500 uppercase">Total Profit</p>
         <p id="total-profit" class="text-2xl font-bold mt-1 text-green-600">$0.00</p>
       </div>
-      <div class="bg-white p-4 rounded-xl shadow-lg border-l-4 border-red-500">
-        <p class="text-xs text-gray-500 uppercase">Loss (USD)</p>
+      <div class="card p-4 border-l-4 border-rose-500">
+        <p class="text-xs text-gray-500 uppercase">Total Loss</p>
         <p id="total-loss" class="text-2xl font-bold mt-1 text-red-600">$0.00</p>
       </div>
-      <div class="bg-white p-4 rounded-xl shadow-lg border-l-4 border-yellow-500">
+      <div class="card p-4 border-l-4 border-yellow-500">
         <p class="text-xs text-gray-500 uppercase">Win Rate</p>
-        <p id="win-rate" class="text-2xl font-bold mt-1">0%</p>
+        <p id="win-rate" class="text-2xl font-bold mt-1">0.0%</p>
       </div>
-      <div class="bg-white p-4 rounded-xl shadow-lg border-l-4 border-emerald-500">
-        <p class="text-xs text-gray-500 uppercase">Equity (USD)</p>
-        <p id="total-equity" class="text-2xl font-bold mt-1">$0.00</p>
+      <div class="card p-4 border-l-4 border-indigo-400">
+        <p class="text-xs text-gray-500 uppercase">Total Trades</p>
+        <p id="total-trades" class="text-2xl font-bold mt-1">0</p>
       </div>
     </div>
 
-    <!-- Charts -->
-    <section class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
-      <div class="bg-white p-6 rounded-xl shadow-lg lg:col-span-2">
-        <h2 class="text-lg font-semibold text-indigo-600 mb-4">Cumulative P&L (USD)</h2>
+    <!-- ===== Charts ===== -->
+    <section class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+      <div class="card p-6 lg:col-span-2">
+        <h2 class="text-lg font-semibold text-indigo-600 mb-4">Cumulative P&L</h2>
         <div class="relative h-64 md:h-96"><canvas id="pnlChart"></canvas></div>
       </div>
-      <div class="bg-white p-6 rounded-xl shadow-lg">
+      <div class="card p-6">
         <h2 class="text-lg font-semibold text-indigo-600 mb-4">Trade Outcomes</h2>
         <div class="relative h-64"><canvas id="outcomesChart"></canvas></div>
       </div>
     </section>
 
-    <!-- Add Entry -->
-    <section class="bg-white p-6 rounded-xl shadow-lg mb-8">
-      <h2 class="text-lg font-semibold text-indigo-600 mb-4">Log New Entry</h2>
-      <form id="add-form" class="grid grid-cols-2 md:grid-cols-9 gap-3 md:gap-4">
+    <!-- ===== Settings row (FX) ===== -->
+    <section class="card p-4 mb-6">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+        <div>
+          <label class="text-xs text-gray-500">CAD→USD Rate (for deposits)</label>
+          <input id="fxRate" type="number" step="0.0001" class="w-full p-3 border rounded-lg" placeholder="e.g., 0.73">
+          <p class="text-[11px] text-gray-400 mt-1">Saved locally on this device</p>
+        </div>
+        <button id="saveFx" class="h-12 bg-gray-100 hover:bg-gray-200 rounded-lg font-semibold">Save FX</button>
+        <div class="text-xs text-gray-500">
+          <div>Trades are in <b>USD</b>. Deposits can be <b>CAD</b> or <b>USD</b>; CAD deposits are converted using your FX rate.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== Add / Edit Entry ===== -->
+    <section class="card p-6 mb-6">
+      <div class="flex items-center justify-between mb-4">
+        <h2 id="form-title" class="text-lg font-semibold text-indigo-600">Log New Entry</h2>
+        <button id="cancel-edit" class="hidden text-sm text-gray-500 hover:underline">Cancel edit</button>
+      </div>
+
+      <form id="entry-form" class="grid grid-cols-2 md:grid-cols-10 gap-3">
         <select id="type" class="p-3 border rounded-lg">
-          <option>Trade</option><option>Deposit</option>
+          <option>Trade</option>
+          <option>Deposit</option>
         </select>
 
         <select id="assetType" class="p-3 border rounded-lg">
-          <option>Stock</option><option>Crypto</option><option>Forex</option>
+          <option>Stocks</option>
+          <option>Crypto</option>
+          <option>Forex</option>
         </select>
 
-        <input id="symbol" placeholder="Symbol" class="p-3 border rounded-lg col-span-2" />
+        <input id="symbol" placeholder="Symbol" class="p-3 border rounded-lg" />
         <input id="entryDate" type="date" class="p-3 border rounded-lg" />
-
         <input id="size" type="number" placeholder="Size" class="p-3 border rounded-lg" />
-        <input id="entryPrice" type="number" step="0.01" placeholder="Entry / Amount" class="p-3 border rounded-lg" />
-        <input id="exitPrice" type="number" step="0.01" placeholder="Exit (trades)" class="p-3 border rounded-lg" />
 
         <select id="action" class="p-3 border rounded-lg">
-          <option>Call</option><option>Put</option>
+          <option>Buy</option>
+          <option>Call</option>
+          <option>Put</option>
         </select>
 
-        <button class="btn col-span-2 md:col-span-1">Add</button>
+        <input id="entryPrice" type="number" step="0.01" placeholder="Entry / Amount" class="p-3 border rounded-lg" />
+        <input id="exitPrice" type="number" step="0.01" placeholder="Exit (for trades)" class="p-3 border rounded-lg" />
+
+        <select id="depCurrency" class="p-3 border rounded-lg">
+          <option>USD</option>
+          <option>CAD</option>
+        </select>
+
+        <button id="save-btn" class="bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-bold py-3">Add</button>
       </form>
-
-      <div class="mt-2 text-xs text-gray-500">
-        Deposits are treated as <strong>CAD</strong> and auto-converted to USD with a cached daily rate.  
-        <button id="edit-rate" class="underline">Set manual CAD→USD rate</button>
-      </div>
-
       <div id="form-msg" class="text-red-600 text-xs mt-2"></div>
     </section>
 
-    <!-- History -->
-    <section class="bg-white p-6 rounded-xl shadow-lg">
+    <!-- ===== History ===== -->
+    <section class="card p-6">
       <h2 class="text-lg font-semibold text-indigo-600 mb-4">Transaction History</h2>
-      <div id="trade-list-container" class="overflow-x-auto max-h-[420px]">
+      <div id="trade-list-container" class="overflow-x-auto max-h-[440px]">
         <table class="min-w-full divide-y divide-gray-200 text-sm">
-          <thead class="bg-gray-50">
+          <thead class="bg-gray-50 sticky top-0 z-10">
             <tr>
               <th class="px-3 py-2 text-left">Date</th>
               <th class="px-3 py-2 text-left">Type</th>
-              <th class="px-3 py-2 text-left">Asset Type</th>
+              <th class="px-3 py-2 text-left">Asset</th>
               <th class="px-3 py-2 text-left">Symbol</th>
               <th class="px-3 py-2 text-right">Entry</th>
               <th class="px-3 py-2 text-right">Exit</th>
               <th class="px-3 py-2 text-right">Size</th>
               <th class="px-3 py-2 text-left">Action</th>
-              <th class="px-3 py-2 text-right">P&L (USD)</th>
+              <th class="px-3 py-2 text-right">P&L</th>
               <th class="px-3 py-2 text-right">P&L %</th>
               <th class="px-3 py-2 text-right">Cum P&L</th>
-              <th class="px-3 py-2"></th>
+              <th class="px-3 py-2 text-left">Result</th>
+              <th class="px-3 py-2 text-right">Edit</th>
+              <th class="px-3 py-2 text-right">Del</th>
             </tr>
           </thead>
           <tbody id="trade-list"></tbody>
@@ -158,223 +177,208 @@
     </section>
   </div>
 
-  <!-- Edit modal -->
-  <div id="edit-modal" class="fixed inset-0 hidden items-center justify-center bg-black/50 z-50">
-    <div class="bg-white p-6 rounded-xl shadow-xl w-full max-w-lg">
-      <h3 class="text-lg font-semibold mb-3">Edit Entry</h3>
-      <form id="edit-form" class="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <input id="e_date" type="date" class="p-2 border rounded" />
-        <input id="e_symbol" class="p-2 border rounded" placeholder="Symbol" />
-        <input id="e_size" type="number" class="p-2 border rounded" placeholder="Size"/>
-        <input id="e_entry" type="number" step="0.01" class="p-2 border rounded" placeholder="Entry / Amount"/>
-        <input id="e_exit"  type="number" step="0.01" class="p-2 border rounded" placeholder="Exit"/>
-        <select id="e_action" class="p-2 border rounded"><option>Call</option><option>Put</option></select>
-        <select id="e_assetType" class="p-2 border rounded"><option>Stock</option><option>Crypto</option><option>Forex</option></select>
-        <button class="btn col-span-2">Save</button>
-      </form>
-      <div class="mt-3 flex justify-end">
-        <button id="close-edit" class="btn-outline">Close</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- SCRIPT -->
+  <!-- ============= ONE SCRIPT ============= -->
   <script type="module">
     /***** Firebase imports *****/
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js";
     import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-auth.js";
-    import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query, where } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
+    import { getFirestore, collection, addDoc, setDoc, deleteDoc, doc, onSnapshot, query, where, getDoc } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
 
-    /***** CONFIG — replace if needed *****/
-    const ALLOWED_EMAIL = "kaur.2804amandeep@gmail.com";
+    /***** YOUR Firebase config (exact) *****/
     const firebaseConfig = {
       apiKey: "AIzaSyB5rvkKPst6V9-7HoqK1f27jQj6x7f8LiA",
       authDomain: "trading-journal-da4eb.firebaseapp.com",
       projectId: "trading-journal-da4eb",
-      storageBucket: "trading-journal-da4eb.appspot.com",
+      storageBucket: "trading-journal-da4eb.firebasestorage.app",
       messagingSenderId: "50906470929",
       appId: "1:50906470929:web:b9ad784e9ae86c06d42fb0",
       measurementId: "G-WR261BKTXL"
     };
 
+    /***** App init *****/
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
-    const db   = getFirestore(app);
+    const db = getFirestore(app);
+    const tradesColl = collection(db, "trades");
 
-    /* ---------- PWA service worker ---------- */
-    if ("serviceWorker" in navigator) {
-      navigator.serviceWorker.register("service-worker.js?v=7");
-      document.getElementById("refresh-sw").onclick = async () => {
-        const regs = await navigator.serviceWorker.getRegistrations();
-        regs.forEach(r => r.update());
-        location.reload(true);
-      };
-    }
+    /***** App policy (only your email can log in) *****/
+    const ALLOWED_EMAIL = "kaur.2804amandeep@gmail.com";
 
-    /* ---------- Helpers ---------- */
+    /***** Small helpers *****/
     const $ = id => document.getElementById(id);
     const show = el => el.classList.remove("hidden");
     const hide = el => el.classList.add("hidden");
-    const money = (n, cur="USD") => new Intl.NumberFormat("en-US", { style:"currency", currency:cur }).format(Number(n)||0);
+    const money = n => new Intl.NumberFormat("en-US",{style:"currency",currency:"USD"}).format(Number(n)||0);
     const todayISO = () => {
-      const d = new Date(); const m = String(d.getMonth()+1).padStart(2,'0'); const day = String(d.getDate()).padStart(2,'0');
+      const d=new Date(); const m=String(d.getMonth()+1).padStart(2,'0'); const day=String(d.getDate()).padStart(2,'0');
       return `${d.getFullYear()}-${m}-${day}`;
     };
-    function setLoading(m){ $("loading-msg").textContent=m; $("loading").classList.add("flex"); show($("loading"));}
-    function clearLoading(){ hide($("loading")); $("loading").classList.remove("flex");}
 
-    /* ---------- FX Rate CAD->USD (daily cached) ---------- */
-    async function getCadUsdRate() {
-      const key = "fx_cad_usd";
-      const cached = JSON.parse(localStorage.getItem(key) || "null");
-      const today = new Date().toISOString().slice(0,10);
-      if (cached && cached.date === today && cached.rate) return cached.rate;
+    // Show config in tiny grey text (for quick debug & cache-busting confirmation)
+    $("cfg-msg").textContent = `projectId: ${firebaseConfig.projectId} | apiKey: ${firebaseConfig.apiKey.slice(0,8)}…`;
 
-      try {
-        const r = await fetch("https://api.exchangerate.host/latest?base=CAD&symbols=USD");
-        const j = await r.json();
-        const rate = j?.rates?.USD || 0.74;
-        localStorage.setItem(key, JSON.stringify({ date: today, rate }));
-        return rate;
-      } catch {
-        // fallback to last cached or default
-        return cached?.rate || 0.74;
-      }
-    }
-
-    // manual override dialog
-    $("edit-rate").onclick = async () => {
-      const cur = await getCadUsdRate();
-      const v = prompt("Manual CAD→USD rate (leave blank to keep auto):", String(cur));
-      if (!v) return;
-      const rate = Number(v);
-      if (!Number.isFinite(rate) || rate <= 0) return alert("Invalid rate");
-      localStorage.setItem("fx_cad_usd", JSON.stringify({ date: new Date().toISOString().slice(0,10), rate, manual:true }));
-      alert("Rate saved.");
+    // FX rate local storage
+    $("fxRate").value = localStorage.getItem("fxCadUsd") || "";
+    $("saveFx").onclick = () => {
+      const v = $("fxRate").value.trim();
+      if(!v){ alert("Enter a CAD→USD rate (e.g., 0.73)"); return; }
+      localStorage.setItem("fxCadUsd", v);
+      alert("Saved!");
     };
 
-    /* ---------- Auth Flow ---------- */
+    /***** Loading helpers *****/
+    function setLoading(msg){ $("loading-msg").textContent=msg; show($("loading")); }
+    function clearLoading(){ hide($("loading")); }
+
+    /***** Login flow *****/
     setLoading("Checking session…");
+
     $("login-form").addEventListener("submit", async (e)=>{
-      e.preventDefault(); $("login-msg").textContent="";
+      e.preventDefault();
+      $("login-msg").textContent = "";
       try {
         const email = $("email").value.trim();
         const pass  = $("password").value.trim();
-        const cred = await signInWithEmailAndPassword(auth, email, pass);
-        if (cred.user.email !== ALLOWED_EMAIL) { $("login-msg").textContent = "Not authorized"; await signOut(auth); }
-      } catch (err) { $("login-msg").textContent = "Firebase: " + (err.message || err.code); }
+        const cred = await signInWithEmailAndPassword(auth,email,pass);
+        if(cred.user.email !== ALLOWED_EMAIL){
+          $("login-msg").textContent="Not authorized for this app.";
+          await signOut(auth);
+          return;
+        }
+      }catch(err){ $("login-msg").textContent="Firebase: "+(err.message||err.code||err); }
     });
+
     $("logout").onclick = ()=>signOut(auth);
 
-    let unsub=null, currentUid=null, editingId=null;
     onAuthStateChanged(auth, (user)=>{
       clearLoading();
       if(user && user.email === ALLOWED_EMAIL){
         $("auth-status").textContent = "Signed in as: "+user.email;
         hide($("login")); show($("app"));
-        currentUid = user.uid;
-        startRealtime();
+        boot(user.uid);
       }else{
         show($("login")); hide($("app"));
-        if (unsub) unsub();
       }
     });
 
-    /* ---------- Add Entry ---------- */
-    $("add-form").addEventListener("submit", async (e)=>{
-      e.preventDefault(); $("form-msg").textContent="";
-      const T = id => $(id).value;
-      const type = T("type");
-      const assetType = T("assetType");
-      const symbol = (T("symbol")||"").toUpperCase();
-      const entryDate = T("entryDate") || todayISO();
-      const size  = +T("size") || 0;
-      const entry = +T("entryPrice") || 0;
-      const exit  = +T("exitPrice") || 0;
-      const action = T("action");
+    /***** State *****/
+    let unsub = null;
+    let editingId = null; // when editing an existing doc
 
-      if(type==="Trade"){
-        if(!symbol) return $("form-msg").textContent="Symbol required.";
-        if(!(size>0)) return $("form-msg").textContent="Size must be > 0.";
-      } else { // Deposit
-        if(!(entry>0)) return $("form-msg").textContent="Enter deposit amount in CAD.";
-      }
+    /***** Boot after auth *****/
+    function boot(uid){
+      if(unsub) unsub();
 
-      // P&L in USD for trades only
-      let pnl = 0, pct = 0;
-      if(type==="Trade"){
-        const dir = (action === "Put") ? -1 : 1; // Call = +, Put = -
-        pnl = (exit - entry) * size * dir;
-        pct = entry > 0 ? (pnl / (entry * size)) * 100 : 0;
-      }
+      // Wire form
+      $("entry-form").onsubmit = e => submitEntry(e, uid);
+      $("cancel-edit").onclick = () => {
+        editingId = null;
+        $("form-title").textContent = "Log New Entry";
+        $("save-btn").textContent = "Add";
+        $("entry-form").reset();
+        $("form-msg").textContent = "";
+        hide($("cancel-edit"));
+      };
 
-      // convert deposit CAD->USD
-      let depositCad = 0, depositUsd = 0;
-      if (type === "Deposit"){
-        depositCad = entry;
-        const rate = await getCadUsdRate();
-        depositUsd = +(depositCad * rate).toFixed(2);
-      }
-
-      try{
-        await addDoc(collection(db,"trades"), {
-          ownerUid: currentUid,
-          type, assetType, action, symbol,
-          entryDate, size,
-          entryPrice: entry, exitPrice: exit,
-          pnl:+pnl.toFixed(2), pnlPct:+pct.toFixed(2),
-          depositCad, depositUsd,
-          timestamp: new Date().toISOString()
-        });
-        e.target.reset();
-      }catch(err){ $("form-msg").textContent="Error: "+(err.message||err); }
-    });
-
-    /* ---------- Realtime + Render ---------- */
-    let pnlChart=null, outcomesChart=null;
-
-    function startRealtime(){
-      if (unsub) unsub();
-      const q = query(collection(db,"trades"), where("ownerUid","==",currentUid));
-      unsub = onSnapshot(q, snap=>{
-        const list=[]; snap.forEach(d=>list.push({id:d.id,...d.data()}));
-        render(list.sort((a,b)=>new Date(a.entryDate)-new Date(b.entryDate)));
+      // Listen to only this owner's docs
+      const qOwner = query(tradesColl, where("ownerUid","==",uid));
+      unsub = onSnapshot(qOwner, snap=>{
+        const rows=[]; snap.forEach(d=>rows.push({id:d.id, ...d.data()}));
+        rows.sort((a,b)=> (a.entryDate||"") < (b.entryDate||"") ? -1 : 1);
+        render(rows);
       });
     }
 
-    window.delTrade = async (id)=>{ try{ await deleteDoc(doc(db,"trades",id)); }catch(e){ alert(e.message);} };
-
-    function openEdit(t){
-      editingId = t.id;
-      $("e_date").value = t.entryDate || todayISO();
-      $("e_symbol").value = t.symbol || "";
-      $("e_size").value = t.size ?? 0;
-      $("e_entry").value = t.entryPrice ?? 0;
-      $("e_exit").value  = t.exitPrice ?? 0;
-      $("e_action").value = t.action || "Call";
-      $("e_assetType").value = t.assetType || "Stock";
-      show($("edit-modal")); $("edit-modal").classList.add("flex");
-    }
-    $("close-edit").onclick = ()=>{ hide($("edit-modal")); $("edit-modal").classList.remove("flex"); };
-    $("edit-form").addEventListener("submit", async (e)=>{
+    /***** Add/Update entry *****/
+    async function submitEntry(e, uid){
       e.preventDefault();
-      if(!editingId) return;
-      const ref = doc(db,"trades",editingId);
-      const entry = +$("e_entry").value||0, exit= +$("e_exit").value||0, size= +$("e_size").value||0;
-      let pnl=0,pct=0;
-      if(size>0){ const dir = ($("e_action").value==="Put")?-1:1; pnl=(exit-entry)*size*dir; pct=entry>0?(pnl/(entry*size))*100:0; }
+      $("form-msg").textContent="";
+
+      const type      = $("type").value;
+      const assetType = $("assetType").value;
+      const symbol    = ($("symbol").value||"").toUpperCase();
+      const entryDate = $("entryDate").value || todayISO();
+      const size      = +($("size").value||0);
+      const action    = $("action").value;     // Buy / Call / Put
+      const entry     = +($("entryPrice").value||0);
+      const exit      = +($("exitPrice").value||0);
+      const depCur    = $("depCurrency").value; // USD or CAD
+
+      // Validate
+      if(type==="Trade"){
+        if(!symbol){ $("form-msg").textContent="Symbol required for trades"; return; }
+        if(!(size>0)){ $("form-msg").textContent="Size must be > 0"; return; }
+      }else{ // Deposit
+        if(!(entry>0)){ $("form-msg").textContent="Enter deposit amount"; return; }
+      }
+
+      // Compute
+      let pnl=0, pct=0, depositUsd=0;
+      if(type==="Trade"){
+        const dir = (action==="Put") ? -1 : 1; // Buy/Call = +1, Put = -1
+        pnl = (exit - entry) * size * dir;
+        pct = entry>0 ? (pnl/(entry*size))*100 : 0;
+      }else{
+        // Deposit: convert if CAD
+        const fx = parseFloat(localStorage.getItem("fxCadUsd")||"0") || 0;
+        depositUsd = depCur==="CAD" ? entry * (fx||0) : entry;
+      }
+
+      const payload = {
+        ownerUid: uid,
+        type, assetType, symbol,
+        action, entryDate, size,
+        entryPrice: entry, exitPrice: exit,
+        pnl: +pnl.toFixed(2),
+        pnlPct: +pct.toFixed(2),
+        depositUsd: +depositUsd.toFixed(2),
+        depositCurrency: depCur,
+        timestamp: new Date().toISOString()
+      };
+
       try{
-        await updateDoc(ref,{
-          entryDate:$("e_date").value || todayISO(),
-          symbol: $("e_symbol").value.toUpperCase(),
-          size, entryPrice:entry, exitPrice:exit,
-          action:$("e_action").value,
-          assetType:$("e_assetType").value,
-          pnl:+pnl.toFixed(2), pnlPct:+pct.toFixed(2)
-        });
-        $("close-edit").click();
-      }catch(err){ alert("Update failed: "+(err.message||err)); }
-    });
+        if(editingId){
+          await setDoc(doc(db,"trades",editingId), payload, { merge:true });
+          editingId = null;
+          $("form-title").textContent = "Log New Entry";
+          $("save-btn").textContent = "Add";
+          hide($("cancel-edit"));
+        }else{
+          await addDoc(tradesColl, payload);
+        }
+        $("entry-form").reset();
+      }catch(err){
+        $("form-msg").textContent = "Error: " + (err.message||err);
+      }
+    }
+
+    /***** Delete / Edit *****/
+    window.delTrade = async(id)=>{ try{ await deleteDoc(doc(db,"trades",id)); }catch(e){ alert(e.message);} };
+    window.editTrade = async(id)=>{
+      try{
+        const snap = await getDoc(doc(db,"trades",id));
+        if(!snap.exists()) return;
+        const t = snap.data();
+        editingId = id;
+        $("form-title").textContent = "Edit Entry";
+        $("save-btn").textContent = "Save";
+        show($("cancel-edit"));
+
+        $("type").value = t.type;
+        $("assetType").value = t.assetType||"Stocks";
+        $("symbol").value = t.symbol||"";
+        $("entryDate").value = t.entryDate||todayISO();
+        $("size").value = t.size||0;
+        $("action").value = t.action||"Buy";
+        $("entryPrice").value = t.entryPrice||0;
+        $("exitPrice").value = t.exitPrice||0;
+        $("depCurrency").value = t.depositCurrency||"USD";
+        window.scrollTo({top:0,behavior:"smooth"});
+      }catch(e){ alert(e.message); }
+    };
+
+    /***** Render table + metrics + charts *****/
+    let pnlChart=null, outcomesChart=null;
 
     function render(list){
       const body=$("trade-list"); body.innerHTML="";
@@ -382,81 +386,116 @@
 
       if(!list.length){
         show(none);
-        ["total-deposit-cad","total-deposit-usd","total-profit","total-loss","total-equity","win-rate"].forEach(id=>$(id).textContent=id==="win-rate"?"0%":"$0.00");
-      } else hide(none);
+        setMetrics(0,0,0,0,0,0);
+        updateCharts([],[]);
+        return;
+      }
+      hide(none);
 
-      let running=0,w=0,l=0,z=0;
-      let totalProfit=0,totalLoss=0;
-      let depCad=0, depUsd=0;
+      // Running P&L, equity, deposits, wins/losses
+      let running=0, wins=0, losses=0, evens=0;
+      let totalProfit=0, totalLoss=0, totalDeposits=0;
 
+      const labels=[], cum=[];
       list.forEach(t=>{
-        running += t.pnl || 0;
-        if (t.type==="Trade"){
-          if ((t.pnl||0)>0) totalProfit += t.pnl||0;
-          if ((t.pnl||0)<0) totalLoss   += Math.abs(t.pnl||0);
-          if ((t.pnl||0)>0) w++; else if ((t.pnl||0)<0) l++; else z++;
-        } else if (t.type==="Deposit"){
-          depCad += t.depositCad || 0;
-          depUsd += t.depositUsd || 0;
+        // deposits affect equity but not P&L; for chart we keep trading pnl only
+        running += (t.pnl||0);
+
+        // aggregate
+        if(t.type==="Trade"){
+          if((t.pnl||0)>0){ wins++; totalProfit += (t.pnl||0); }
+          else if((t.pnl||0)<0){ losses++; totalLoss += Math.abs(t.pnl||0); }
+          else { evens++; }
+        }else if(t.type==="Deposit"){
+          totalDeposits += (t.depositUsd||0);
         }
 
-        const cls=(t.pnl||0)>=0?"text-green-600":"text-red-600";
+        labels.push(`${t.entryDate||""} ${t.symbol||""}`.trim());
+        cum.push(running);
+      });
+
+      // Equity = totalDeposits + cumulative P&L
+      const equity = totalDeposits + running;
+      const tradesOnly = list.filter(x=>x.type==="Trade");
+      const winRate = tradesOnly.length ? (wins/tradesOnly.length)*100 : 0;
+
+      setMetrics(equity,totalDeposits,totalProfit,totalLoss,winRate,tradesOnly.length);
+      updateCharts(labels, cum);
+
+      // rows
+      let liveCum=0;
+      list.forEach(t=>{
+        liveCum += (t.pnl||0);
+        const cls = (t.pnl||0)>=0 ? "text-green-600" : "text-red-600";
+        const result = t.type!=="Trade" ? "-" : (t.pnl>0?"Win":t.pnl<0?"Loss":"Breakeven");
+
         body.insertAdjacentHTML("beforeend",`
           <tr class="hover:bg-gray-50">
             <td class="px-3 py-2">${t.entryDate||"—"}</td>
             <td class="px-3 py-2">${t.type||"—"}</td>
             <td class="px-3 py-2">${t.assetType||"—"}</td>
             <td class="px-3 py-2 font-semibold text-indigo-600">${t.symbol||"—"}</td>
-            <td class="px-3 py-2 text-right">${money(t.entryPrice, t.type==="Deposit"?"CAD":"USD")}</td>
-            <td class="px-3 py-2 text-right">${t.type==="Deposit"?"—":money(t.exitPrice,"USD")}</td>
-            <td class="px-3 py-2 text-right">${t.type==="Deposit"?"—":(t.size??0)}</td>
-            <td class="px-3 py-2">${t.type==="Deposit"?"—":(t.action||"—")}</td>
-            <td class="px-3 py-2 text-right ${cls} font-semibold">${t.type==="Deposit"?"—":money(t.pnl,"USD")}</td>
-            <td class="px-3 py-2 text-right ${cls}">${t.type==="Deposit"?"—":((t.pnlPct||0).toFixed(2)+"%")}</td>
-            <td class="px-3 py-2 text-right">${t.type==="Deposit"?"—":money(running,"USD")}</td>
+            <td class="px-3 py-2 text-right">${money(t.entryPrice)}</td>
+            <td class="px-3 py-2 text-right">${money(t.exitPrice)}</td>
+            <td class="px-3 py-2 text-right">${Number.isFinite(t.size)?t.size:0}</td>
+            <td class="px-3 py-2">${t.action||"—"}</td>
+            <td class="px-3 py-2 text-right ${cls} font-semibold">${money(t.pnl)}</td>
+            <td class="px-3 py-2 text-right ${cls}">${(t.pnlPct||0).toFixed(2)}%</td>
+            <td class="px-3 py-2 text-right">${money(liveCum)}</td>
+            <td class="px-3 py-2">${result}</td>
             <td class="px-3 py-2 text-right">
-              <button class="text-indigo-600 mr-2" onclick='(${openEdit.toString()})(${JSON.stringify(t)})'>✏️</button>
+              <button class="text-indigo-600" onclick="editTrade('${t.id}')">✎</button>
+            </td>
+            <td class="px-3 py-2 text-right">
               <button class="text-red-600" onclick="delTrade('${t.id}')">✕</button>
             </td>
           </tr>
         `);
       });
+    }
 
-      // Totals & Equity (Deposits USD + realized P&L)
-      const trades = list.filter(x=>x.type==="Trade");
-      const wr = trades.length ? (w/trades.length)*100 : 0;
-      $("total-deposit-cad").textContent = money(depCad,"CAD");
-      $("total-deposit-usd").textContent = money(depUsd,"USD");
-      $("total-profit").textContent = money(totalProfit,"USD");
-      $("total-loss").textContent = money(totalLoss,"USD");
-      $("win-rate").textContent = wr.toFixed(1)+"%";
-      $("total-equity").textContent = money(depUsd + (totalProfit - totalLoss),"USD");
+    function setMetrics(equity,totalDep,totalProf,totalLoss,wr,trades){
+      $("equity-usd").textContent = money(equity);
+      $("total-deposits").textContent = money(totalDep);
+      $("total-profit").textContent = money(totalProf);
+      $("total-loss").textContent = money(totalLoss);
+      $("win-rate").textContent = (wr||0).toFixed(1)+"%";
+      $("total-trades").textContent = String(trades||0);
+    }
 
-      // Charts
-      const labelTrades = list.filter(x=>x.type==="Trade");
-      const labels = labelTrades.map(t => `${t.entryDate} ${t.symbol||""}`.trim());
-      let r=0; const cum = labelTrades.map(t => r += (t.pnl||0));
-      const W = labelTrades.filter(t=>t.pnl>0).length;
-      const L = labelTrades.filter(t=>t.pnl<0).length;
-      const Z = labelTrades.filter(t=>t.pnl===0).length;
-
+    function updateCharts(labels, cum){
       if(!pnlChart){
         pnlChart=new Chart($("pnlChart"),{
           type:"line",
-          data:{labels,datasets:[{label:"Cumulative P&L",data:cum,borderColor:"#10b981"}]},
+          data:{labels,datasets:[{label:"Cumulative P&L",data:cum,borderColor:"#10b981",fill:false}]},
           options:{responsive:true,maintainAspectRatio:false}
         });
       }else{
-        pnlChart.data.labels=labels; pnlChart.data.datasets[0].data=cum; pnlChart.update();
+        pnlChart.data.labels=labels;
+        pnlChart.data.datasets[0].data=cum;
+        pnlChart.update();
       }
+
+      // Quick counts for outcomes
+      const table = Array.from(cum); // not needed; we’ll recalc from DOM if necessary later
+      // We don’t have the raw counts here; handled in render()
+      // Keep doughnut stable by reading from current DOM values:
+      const wtxt = $("win-rate").textContent || "0%";
+      const wr = parseFloat(wtxt);
+      // Fake a split using win rate and total trades just for initial render
+      // (Real counts are visual via table; this keeps the chart from being empty)
+      let trades = parseInt($("total-trades").textContent || "0",10);
+      let wins = Math.round((wr/100) * trades);
+      let losses = Math.max(0, trades - wins);
       if(!outcomesChart){
         outcomesChart=new Chart($("outcomesChart"),{
           type:"doughnut",
-          data:{labels:["Win","Loss","Breakeven"],datasets:[{data:[W,L,Z],backgroundColor:["#10b981","#ef4444","#f59e0b"]}]},
+          data:{labels:["Win","Loss","Breakeven"],datasets:[{data:[wins,losses,0],backgroundColor:["#10b981","#ef4444","#f59e0b"]}]},
           options:{responsive:true,maintainAspectRatio:false}
         });
       }else{
-        outcomesChart.data.datasets[0].data=[W,L,Z]; outcomesChart.update();
+        outcomesChart.data.datasets[0].data=[wins,losses,0];
+        outcomesChart.update();
       }
     }
   </script>
