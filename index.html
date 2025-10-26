@@ -5,24 +5,28 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
   <title>Trading Performance Journal</title>
 
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
-  <link rel="manifest" href="manifest.json" />
+  <!-- App icons / PWA -->
+  <link rel="manifest" href="manifest.json?v=7" />
+  <link rel="icon" href="icons/icon-192.png">
   <meta name="theme-color" content="#4f46e5" />
 
+  <!-- Tailwind + ChartJS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+
   <style>
-    #trade-list-container { -webkit-overflow-scrolling: touch; }
-    .spinner { border-top-color:#4f46e5 }
-    .subtle { font-size:11px; color:#6b7280 }
+    .spinner{border-top-color:#4f46e5}
+    #trade-list-container{-webkit-overflow-scrolling:touch}
+    .btn{ @apply bg-indigo-600 text-white rounded-lg font-semibold px-4 py-2; }
+    .btn-outline{ @apply bg-white border border-gray-300 text-gray-700 rounded-lg px-3 py-2; }
   </style>
 </head>
 <body class="bg-gray-50 text-gray-800 min-h-screen p-4 md:p-8">
-
   <!-- Loading -->
   <div id="loading" class="fixed inset-0 hidden items-center justify-center bg-gray-50 z-50">
     <div class="text-center p-8 bg-white shadow-xl rounded-xl">
       <div class="spinner animate-spin rounded-full h-12 w-12 border-4 border-indigo-500 border-gray-200 mx-auto mb-4"></div>
-      <p id="loading-msg" class="text-indigo-600 font-semibold">Loading...</p>
+      <p id="loading-msg" class="text-indigo-600 font-semibold">Loading…</p>
     </div>
   </div>
 
@@ -33,98 +37,57 @@
     <form id="login-form" class="space-y-3">
       <input id="email" type="email" placeholder="Email" class="w-full p-3 border rounded-lg" required />
       <input id="password" type="password" placeholder="Password" class="w-full p-3 border rounded-lg" required />
-      <button class="w-full bg-indigo-600 text-white font-semibold py-3 rounded-lg">Log in</button>
+      <button class="w-full btn">Log in</button>
     </form>
     <p id="login-msg" class="text-sm text-red-600 mt-3"></p>
   </div>
 
   <!-- App -->
   <div id="app" class="max-w-7xl mx-auto hidden">
-
-    <!-- Header -->
-    <header class="mb-6 p-4 bg-white shadow-lg rounded-xl flex items-center justify-between">
+    <header class="mb-8 p-4 bg-white shadow-lg rounded-xl flex items-center justify-between">
       <div>
         <h1 class="text-3xl font-bold text-indigo-700 mb-1">Trading Performance Journal</h1>
-        <p class="text-sm text-gray-500">Multi-currency totals with live charts</p>
+        <p class="text-sm text-gray-500">Deposits in CAD (auto to USD), trades in USD.</p>
         <p id="auth-status" class="text-xs mt-2 text-indigo-400"></p>
       </div>
-      <button id="logout" class="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg">Log out</button>
+      <div class="flex gap-2">
+        <button id="refresh-sw" class="btn-outline">Update App</button>
+        <button id="logout" class="btn-outline">Log Out</button>
+      </div>
     </header>
 
-    <!-- Settings (Base currency + FX) -->
-    <section class="mb-6 p-4 bg-white rounded-xl shadow-lg">
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
-        <div>
-          <label class="subtle block mb-1">Base currency (for KPIs & charts)</label>
-          <select id="baseCurrency" class="p-3 border rounded-lg w-full">
-            <option value="USD" selected>USD</option>
-            <option value="CAD">CAD</option>
-          </select>
-        </div>
-        <div>
-          <label class="subtle block mb-1">FX (1 CAD → USD)</label>
-          <input id="fxCadUsd" type="number" step="0.0001" value="0.73" class="p-3 border rounded-lg w-full" />
-          <p class="subtle mt-1">Reverse is computed automatically.</p>
-        </div>
-        <div>
-          <button id="applySettings" class="w-full bg-indigo-600 text-white font-semibold py-3 rounded-lg">
-            Apply settings
-          </button>
-        </div>
-      </div>
-    </section>
-
-    <!-- KPI cards -->
-    <div class="grid grid-cols-2 md:grid-cols-8 gap-4 mb-8">
+    <!-- Totals -->
+    <div class="grid grid-cols-2 md:grid-cols-6 gap-4 mb-8">
       <div class="bg-white p-4 rounded-xl shadow-lg border-l-4 border-indigo-500">
-        <p class="subtle uppercase">Total P&L (<span id="kpi-cur-1">USD</span>)</p>
-        <p id="total-pnl" class="text-2xl font-bold mt-1">$0.00</p>
-        <p id="total-pnl-break" class="subtle mt-1"></p>
+        <p class="text-xs text-gray-500 uppercase">Deposits (CAD)</p>
+        <p id="total-deposit-cad" class="text-2xl font-bold mt-1">$0.00</p>
       </div>
-
+      <div class="bg-white p-4 rounded-xl shadow-lg border-l-4 border-indigo-600">
+        <p class="text-xs text-gray-500 uppercase">Deposits (USD)</p>
+        <p id="total-deposit-usd" class="text-2xl font-bold mt-1">$0.00</p>
+      </div>
       <div class="bg-white p-4 rounded-xl shadow-lg border-l-4 border-green-500">
-        <p class="subtle uppercase">Win Rate</p>
+        <p class="text-xs text-gray-500 uppercase">Profit (USD)</p>
+        <p id="total-profit" class="text-2xl font-bold mt-1 text-green-600">$0.00</p>
+      </div>
+      <div class="bg-white p-4 rounded-xl shadow-lg border-l-4 border-red-500">
+        <p class="text-xs text-gray-500 uppercase">Loss (USD)</p>
+        <p id="total-loss" class="text-2xl font-bold mt-1 text-red-600">$0.00</p>
+      </div>
+      <div class="bg-white p-4 rounded-xl shadow-lg border-l-4 border-yellow-500">
+        <p class="text-xs text-gray-500 uppercase">Win Rate</p>
         <p id="win-rate" class="text-2xl font-bold mt-1">0%</p>
       </div>
-
-      <div class="bg-white p-4 rounded-xl shadow-lg border-l-4 border-yellow-500">
-        <p class="subtle uppercase">Total Trades</p>
-        <p id="total-trades" class="text-2xl font-bold mt-1">0</p>
-      </div>
-
-      <div class="bg-white p-4 rounded-xl shadow-lg border-l-4 border-red-500">
-        <p class="subtle uppercase">Average P&L (<span id="kpi-cur-2">USD</span>)</p>
-        <p id="avg-pnl" class="text-2xl font-bold mt-1">$0.00</p>
-      </div>
-
-      <div class="bg-white p-4 rounded-xl shadow-lg border-l-4 border-indigo-600">
-        <p class="subtle uppercase">Last 14 Days (<span id="kpi-cur-3">USD</span>)</p>
-        <p id="pnl-14d" class="text-2xl font-bold mt-1">$0.00</p>
-      </div>
-
-      <div class="bg-white p-4 rounded-xl shadow-lg border-l-4 border-amber-500">
-        <p class="subtle uppercase">Total Deposited (<span id="kpi-cur-4">USD</span>)</p>
-        <p id="total-deposited" class="text-2xl font-bold mt-1">$0.00</p>
-        <p id="total-deposited-break" class="subtle mt-1"></p>
-      </div>
-
       <div class="bg-white p-4 rounded-xl shadow-lg border-l-4 border-emerald-500">
-        <p class="subtle uppercase">Total Profit (<span id="kpi-cur-5">USD</span>)</p>
-        <p id="total-profit" class="text-2xl font-bold mt-1 text-green-600">$0.00</p>
-        <p id="total-profit-break" class="subtle mt-1"></p>
-      </div>
-
-      <div class="bg-white p-4 rounded-xl shadow-lg border-l-4 border-rose-500">
-        <p class="subtle uppercase">Total Loss (<span id="kpi-cur-6">USD</span>)</p>
-        <p id="total-loss" class="text-2xl font-bold mt-1 text-red-600">$0.00</p>
-        <p id="total-loss-break" class="subtle mt-1"></p>
+        <p class="text-xs text-gray-500 uppercase">Equity (USD)</p>
+        <p id="total-equity" class="text-2xl font-bold mt-1">$0.00</p>
       </div>
     </div>
 
     <!-- Charts -->
     <section class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
       <div class="bg-white p-6 rounded-xl shadow-lg lg:col-span-2">
-        <h2 class="text-lg font-semibold text-indigo-600 mb-4">Cumulative P&L (in base currency)</h2>
+        <h2 class="text-lg font-semibold text-indigo-600 mb-4">Cumulative P&L (USD)</h2>
         <div class="relative h-64 md:h-96"><canvas id="pnlChart"></canvas></div>
       </div>
       <div class="bg-white p-6 rounded-xl shadow-lg">
@@ -136,26 +99,34 @@
     <!-- Add Entry -->
     <section class="bg-white p-6 rounded-xl shadow-lg mb-8">
       <h2 class="text-lg font-semibold text-indigo-600 mb-4">Log New Entry</h2>
-      <form id="add-form" class="grid grid-cols-2 md:grid-cols-9 gap-4">
+      <form id="add-form" class="grid grid-cols-2 md:grid-cols-9 gap-3 md:gap-4">
         <select id="type" class="p-3 border rounded-lg">
           <option>Trade</option><option>Deposit</option>
         </select>
+
         <select id="assetType" class="p-3 border rounded-lg">
           <option>Stock</option><option>Crypto</option><option>Forex</option>
         </select>
-        <select id="currency" class="p-3 border rounded-lg">
-          <option>USD</option><option>CAD</option>
-        </select>
-        <input id="symbol" placeholder="Symbol" class="p-3 border rounded-lg" />
+
+        <input id="symbol" placeholder="Symbol" class="p-3 border rounded-lg col-span-2" />
         <input id="entryDate" type="date" class="p-3 border rounded-lg" />
+
         <input id="size" type="number" placeholder="Size" class="p-3 border rounded-lg" />
         <input id="entryPrice" type="number" step="0.01" placeholder="Entry / Amount" class="p-3 border rounded-lg" />
-        <input id="exitPrice" type="number" step="0.01" placeholder="Exit (for trades)" class="p-3 border rounded-lg" />
+        <input id="exitPrice" type="number" step="0.01" placeholder="Exit (trades)" class="p-3 border rounded-lg" />
+
         <select id="action" class="p-3 border rounded-lg">
-          <option>Long</option><option>Short</option><option>Call</option><option>Put</option>
+          <option>Call</option><option>Put</option>
         </select>
-        <button class="bg-indigo-600 text-white rounded-lg font-bold py-3 col-span-2 md:col-span-1">Add</button>
+
+        <button class="btn col-span-2 md:col-span-1">Add</button>
       </form>
+
+      <div class="mt-2 text-xs text-gray-500">
+        Deposits are treated as <strong>CAD</strong> and auto-converted to USD with a cached daily rate.  
+        <button id="edit-rate" class="underline">Set manual CAD→USD rate</button>
+      </div>
+
       <div id="form-msg" class="text-red-600 text-xs mt-2"></div>
     </section>
 
@@ -168,18 +139,16 @@
             <tr>
               <th class="px-3 py-2 text-left">Date</th>
               <th class="px-3 py-2 text-left">Type</th>
-              <th class="px-3 py-2 text-left">Asset</th>
-              <th class="px-3 py-2 text-left">Class</th>
-              <th class="px-3 py-2 text-left">Cur</th>
+              <th class="px-3 py-2 text-left">Asset Type</th>
+              <th class="px-3 py-2 text-left">Symbol</th>
               <th class="px-3 py-2 text-right">Entry</th>
               <th class="px-3 py-2 text-right">Exit</th>
               <th class="px-3 py-2 text-right">Size</th>
               <th class="px-3 py-2 text-left">Action</th>
-              <th class="px-3 py-2 text-right">P&L</th>
+              <th class="px-3 py-2 text-right">P&L (USD)</th>
               <th class="px-3 py-2 text-right">P&L %</th>
-              <th class="px-3 py-2 text-right">Cum P&L (base)</th>
-              <th class="px-3 py-2 text-left">Result</th>
-              <th></th>
+              <th class="px-3 py-2 text-right">Cum P&L</th>
+              <th class="px-3 py-2"></th>
             </tr>
           </thead>
           <tbody id="trade-list"></tbody>
@@ -189,13 +158,34 @@
     </section>
   </div>
 
+  <!-- Edit modal -->
+  <div id="edit-modal" class="fixed inset-0 hidden items-center justify-center bg-black/50 z-50">
+    <div class="bg-white p-6 rounded-xl shadow-xl w-full max-w-lg">
+      <h3 class="text-lg font-semibold mb-3">Edit Entry</h3>
+      <form id="edit-form" class="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <input id="e_date" type="date" class="p-2 border rounded" />
+        <input id="e_symbol" class="p-2 border rounded" placeholder="Symbol" />
+        <input id="e_size" type="number" class="p-2 border rounded" placeholder="Size"/>
+        <input id="e_entry" type="number" step="0.01" class="p-2 border rounded" placeholder="Entry / Amount"/>
+        <input id="e_exit"  type="number" step="0.01" class="p-2 border rounded" placeholder="Exit"/>
+        <select id="e_action" class="p-2 border rounded"><option>Call</option><option>Put</option></select>
+        <select id="e_assetType" class="p-2 border rounded"><option>Stock</option><option>Crypto</option><option>Forex</option></select>
+        <button class="btn col-span-2">Save</button>
+      </form>
+      <div class="mt-3 flex justify-end">
+        <button id="close-edit" class="btn-outline">Close</button>
+      </div>
+    </div>
+  </div>
+
   <!-- SCRIPT -->
   <script type="module">
+    /***** Firebase imports *****/
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js";
     import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-auth.js";
-    import { getFirestore, collection, addDoc, deleteDoc, doc, onSnapshot, query, where } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
+    import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query, where } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
 
-    // --- YOUR CONFIG ---
+    /***** CONFIG — replace if needed *****/
     const ALLOWED_EMAIL = "kaur.2804amandeep@gmail.com";
     const firebaseConfig = {
       apiKey: "AIzaSyB5rvkKPst6V9-7HoqK1f27jQj6x7f8LiA",
@@ -203,266 +193,270 @@
       projectId: "trading-journal-da4eb",
       storageBucket: "trading-journal-da4eb.appspot.com",
       messagingSenderId: "50906470929",
-      appId: "1:50906470929:web:b9ad784e9ae86c06d42fb0"
+      appId: "1:50906470929:web:b9ad784e9ae86c06d42fb0",
+      measurementId: "G-WR261BKTXL"
     };
 
-    // --- Init ---
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db   = getFirestore(app);
 
+    /* ---------- PWA service worker ---------- */
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("service-worker.js?v=7");
+      document.getElementById("refresh-sw").onclick = async () => {
+        const regs = await navigator.serviceWorker.getRegistrations();
+        regs.forEach(r => r.update());
+        location.reload(true);
+      };
+    }
+
+    /* ---------- Helpers ---------- */
     const $ = id => document.getElementById(id);
     const show = el => el.classList.remove("hidden");
     const hide = el => el.classList.add("hidden");
-
-    const money = (n, cur="USD") => {
-      try { return new Intl.NumberFormat("en-US",{style:"currency",currency:cur}).format(Number(n)||0); }
-      catch { return (Number(n)||0).toFixed(2) + " " + cur; }
-    };
+    const money = (n, cur="USD") => new Intl.NumberFormat("en-US", { style:"currency", currency:cur }).format(Number(n)||0);
     const todayISO = () => {
-      const d=new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+      const d = new Date(); const m = String(d.getMonth()+1).padStart(2,'0'); const day = String(d.getDate()).padStart(2,'0');
+      return `${d.getFullYear()}-${m}-${day}`;
     };
+    function setLoading(m){ $("loading-msg").textContent=m; $("loading").classList.add("flex"); show($("loading"));}
+    function clearLoading(){ hide($("loading")); $("loading").classList.remove("flex");}
 
-    function setLoading(msg){ $("loading-msg").textContent=msg; $("loading").classList.remove("hidden"); }
-    function clearLoading(){ $("loading").classList.add("hidden"); }
+    /* ---------- FX Rate CAD->USD (daily cached) ---------- */
+    async function getCadUsdRate() {
+      const key = "fx_cad_usd";
+      const cached = JSON.parse(localStorage.getItem(key) || "null");
+      const today = new Date().toISOString().slice(0,10);
+      if (cached && cached.date === today && cached.rate) return cached.rate;
 
-    // Persist settings locally
-    const settings = {
-      base: localStorage.getItem("baseCurrency") || "USD",
-      fxCadUsd: Number(localStorage.getItem("fxCadUsd") || "0.73")
-    };
-    $("baseCurrency").value = settings.base;
-    $("fxCadUsd").value = String(settings.fxCadUsd);
-
-    // Helper: convert any amount to base currency
-    function toBase(amount, cur){
-      if(cur === settings.base) return amount;
-      if(cur === "CAD" && settings.base === "USD") return amount * settings.fxCadUsd;
-      if(cur === "USD" && settings.base === "CAD") return amount / (settings.fxCadUsd || 1);
-      return amount; // fallback same
+      try {
+        const r = await fetch("https://api.exchangerate.host/latest?base=CAD&symbols=USD");
+        const j = await r.json();
+        const rate = j?.rates?.USD || 0.74;
+        localStorage.setItem(key, JSON.stringify({ date: today, rate }));
+        return rate;
+      } catch {
+        // fallback to last cached or default
+        return cached?.rate || 0.74;
+      }
     }
 
-    function labelBaseKpis(){
-      ["kpi-cur-1","kpi-cur-2","kpi-cur-3","kpi-cur-4","kpi-cur-5","kpi-cur-6"].forEach(id => $(id).textContent = settings.base);
-    }
-    labelBaseKpis();
-
-    $("applySettings").onclick = () => {
-      settings.base   = $("baseCurrency").value;
-      settings.fxCadUsd = Number($("fxCadUsd").value || "0.73");
-      localStorage.setItem("baseCurrency", settings.base);
-      localStorage.setItem("fxCadUsd", String(settings.fxCadUsd));
-      labelBaseKpis();
-      if(window.__lastList) render(window.__lastList); // re-render using new base
+    // manual override dialog
+    $("edit-rate").onclick = async () => {
+      const cur = await getCadUsdRate();
+      const v = prompt("Manual CAD→USD rate (leave blank to keep auto):", String(cur));
+      if (!v) return;
+      const rate = Number(v);
+      if (!Number.isFinite(rate) || rate <= 0) return alert("Invalid rate");
+      localStorage.setItem("fx_cad_usd", JSON.stringify({ date: new Date().toISOString().slice(0,10), rate, manual:true }));
+      alert("Rate saved.");
     };
 
-    // Auth
-    setLoading("Checking session...");
+    /* ---------- Auth Flow ---------- */
+    setLoading("Checking session…");
     $("login-form").addEventListener("submit", async (e)=>{
       e.preventDefault(); $("login-msg").textContent="";
-      try{
-        const cred = await signInWithEmailAndPassword(auth, $("email").value.trim(), $("password").value.trim());
-        if(cred.user.email !== ALLOWED_EMAIL){ $("login-msg").textContent="Not authorized"; await signOut(auth); }
-      }catch(err){ $("login-msg").textContent = "Firebase: " + (err.message || err.code); }
+      try {
+        const email = $("email").value.trim();
+        const pass  = $("password").value.trim();
+        const cred = await signInWithEmailAndPassword(auth, email, pass);
+        if (cred.user.email !== ALLOWED_EMAIL) { $("login-msg").textContent = "Not authorized"; await signOut(auth); }
+      } catch (err) { $("login-msg").textContent = "Firebase: " + (err.message || err.code); }
     });
     $("logout").onclick = ()=>signOut(auth);
 
+    let unsub=null, currentUid=null, editingId=null;
     onAuthStateChanged(auth, (user)=>{
       clearLoading();
       if(user && user.email === ALLOWED_EMAIL){
         $("auth-status").textContent = "Signed in as: "+user.email;
-        hide($("login")); show($("app")); boot(user.uid);
-      }else{ show($("login")); hide($("app")); }
+        hide($("login")); show($("app"));
+        currentUid = user.uid;
+        startRealtime();
+      }else{
+        show($("login")); hide($("app"));
+        if (unsub) unsub();
+      }
     });
 
-    // Data
-    let unsub=null;
-    function boot(uid){
-      if(unsub) unsub();
-      const ref = collection(db, "trades");
-      const q = query(ref, where("ownerUid","==",uid));
+    /* ---------- Add Entry ---------- */
+    $("add-form").addEventListener("submit", async (e)=>{
+      e.preventDefault(); $("form-msg").textContent="";
+      const T = id => $(id).value;
+      const type = T("type");
+      const assetType = T("assetType");
+      const symbol = (T("symbol")||"").toUpperCase();
+      const entryDate = T("entryDate") || todayISO();
+      const size  = +T("size") || 0;
+      const entry = +T("entryPrice") || 0;
+      const exit  = +T("exitPrice") || 0;
+      const action = T("action");
 
-      $("add-form").onsubmit = async (e)=>{
-        e.preventDefault(); $("form-msg").textContent="";
-        const type = $("type").value;
-        const assetType = $("assetType").value;
-        const currency = $("currency").value; // NEW
-        const symbol = ($("symbol").value||"").toUpperCase();
-        const entryDate = $("entryDate").value || todayISO();
-        const size  = +$("size").value || 0;
-        const entry = +$("entryPrice").value || 0;
-        const exit  = +$("exitPrice").value || 0;
-        const action = $("action").value;
+      if(type==="Trade"){
+        if(!symbol) return $("form-msg").textContent="Symbol required.";
+        if(!(size>0)) return $("form-msg").textContent="Size must be > 0.";
+      } else { // Deposit
+        if(!(entry>0)) return $("form-msg").textContent="Enter deposit amount in CAD.";
+      }
 
-        if(type==="Trade" && (!symbol || size<=0)){ $("form-msg").textContent="Invalid trade"; return; }
-        if(type==="Deposit" && entry<=0){ $("form-msg").textContent="Invalid deposit"; return; }
+      // P&L in USD for trades only
+      let pnl = 0, pct = 0;
+      if(type==="Trade"){
+        const dir = (action === "Put") ? -1 : 1; // Call = +, Put = -
+        pnl = (exit - entry) * size * dir;
+        pct = entry > 0 ? (pnl / (entry * size)) * 100 : 0;
+      }
 
-        let pnl=0, pct=0;
-        if(type==="Trade"){
-          const dir=(action==="Short"||action==="Put")?-1:1;
-          pnl=(exit-entry)*size*dir;
-          pct=entry>0?(pnl/(entry*size))*100:0;
-        }
+      // convert deposit CAD->USD
+      let depositCad = 0, depositUsd = 0;
+      if (type === "Deposit"){
+        depositCad = entry;
+        const rate = await getCadUsdRate();
+        depositUsd = +(depositCad * rate).toFixed(2);
+      }
 
-        try{
-          await addDoc(ref,{
-            ownerUid:uid, type, assetType, currency, action, symbol,
-            entryDate, size, entryPrice:entry, exitPrice:exit,
-            pnl:+pnl.toFixed(2), pnlPct:+pct.toFixed(2),
-            timestamp:new Date().toISOString()
-          });
-          e.target.reset();
-        }catch(err){ $("form-msg").textContent="Error: "+(err.message||err); }
-      };
+      try{
+        await addDoc(collection(db,"trades"), {
+          ownerUid: currentUid,
+          type, assetType, action, symbol,
+          entryDate, size,
+          entryPrice: entry, exitPrice: exit,
+          pnl:+pnl.toFixed(2), pnlPct:+pct.toFixed(2),
+          depositCad, depositUsd,
+          timestamp: new Date().toISOString()
+        });
+        e.target.reset();
+      }catch(err){ $("form-msg").textContent="Error: "+(err.message||err); }
+    });
 
+    /* ---------- Realtime + Render ---------- */
+    let pnlChart=null, outcomesChart=null;
+
+    function startRealtime(){
+      if (unsub) unsub();
+      const q = query(collection(db,"trades"), where("ownerUid","==",currentUid));
       unsub = onSnapshot(q, snap=>{
         const list=[]; snap.forEach(d=>list.push({id:d.id,...d.data()}));
-        const sorted = list.sort((a,b)=>new Date(a.entryDate)-new Date(b.entryDate));
-        window.__lastList = sorted;
-        render(sorted);
+        render(list.sort((a,b)=>new Date(a.entryDate)-new Date(b.entryDate)));
       });
     }
 
-    window.delTrade = async(id)=>{ try{ await deleteDoc(doc(db,"trades",id)); }catch(e){ alert(e.message);} };
+    window.delTrade = async (id)=>{ try{ await deleteDoc(doc(db,"trades",id)); }catch(e){ alert(e.message);} };
 
-    // Charts + table + aggregates
-    let pnlChart=null, outcomesChart=null;
+    function openEdit(t){
+      editingId = t.id;
+      $("e_date").value = t.entryDate || todayISO();
+      $("e_symbol").value = t.symbol || "";
+      $("e_size").value = t.size ?? 0;
+      $("e_entry").value = t.entryPrice ?? 0;
+      $("e_exit").value  = t.exitPrice ?? 0;
+      $("e_action").value = t.action || "Call";
+      $("e_assetType").value = t.assetType || "Stock";
+      show($("edit-modal")); $("edit-modal").classList.add("flex");
+    }
+    $("close-edit").onclick = ()=>{ hide($("edit-modal")); $("edit-modal").classList.remove("flex"); };
+    $("edit-form").addEventListener("submit", async (e)=>{
+      e.preventDefault();
+      if(!editingId) return;
+      const ref = doc(db,"trades",editingId);
+      const entry = +$("e_entry").value||0, exit= +$("e_exit").value||0, size= +$("e_size").value||0;
+      let pnl=0,pct=0;
+      if(size>0){ const dir = ($("e_action").value==="Put")?-1:1; pnl=(exit-entry)*size*dir; pct=entry>0?(pnl/(entry*size))*100:0; }
+      try{
+        await updateDoc(ref,{
+          entryDate:$("e_date").value || todayISO(),
+          symbol: $("e_symbol").value.toUpperCase(),
+          size, entryPrice:entry, exitPrice:exit,
+          action:$("e_action").value,
+          assetType:$("e_assetType").value,
+          pnl:+pnl.toFixed(2), pnlPct:+pct.toFixed(2)
+        });
+        $("close-edit").click();
+      }catch(err){ alert("Update failed: "+(err.message||err)); }
+    });
 
     function render(list){
       const body=$("trade-list"); body.innerHTML="";
-      const empty=$("empty");
+      const none=$("empty");
 
       if(!list.length){
-        show(empty);
-        ["total-pnl","win-rate","total-trades","avg-pnl","pnl-14d","total-deposited","total-profit","total-loss"]
-          .forEach(id=>$(id).textContent = id==="win-rate" ? "0%" : money(0, settings.base));
-        ["total-pnl-break","total-deposited-break","total-profit-break","total-loss-break"].forEach(id=>$(id).textContent="");
-        if(pnlChart){ pnlChart.data.labels=[]; pnlChart.data.datasets[0].data=[]; pnlChart.update(); }
-        if(outcomesChart){ outcomesChart.data.datasets[0].data=[0,0,0]; outcomesChart.update(); }
-        return;
-      }
-      hide(empty);
+        show(none);
+        ["total-deposit-cad","total-deposit-usd","total-profit","total-loss","total-equity","win-rate"].forEach(id=>$(id).textContent=id==="win-rate"?"0%":"$0.00");
+      } else hide(none);
 
-      // per-currency buckets
-      const sums = {
-        deposit: { USD:0, CAD:0 },
-        profit:  { USD:0, CAD:0 },
-        loss:    { USD:0, CAD:0 },
-        pnl:     { USD:0, CAD:0 }, // trades only
-        last14:  { USD:0, CAD:0 }
-      };
-
-      // For cumulative in base currency
-      let cumBase = 0;
-      const cutISO=new Date(Date.now()-14*864e5).toISOString().split("T")[0];
-
-      // pre-pass to compute aggregates
-      let wins=0, losses=0, evens=0;
+      let running=0,w=0,l=0,z=0;
+      let totalProfit=0,totalLoss=0;
+      let depCad=0, depUsd=0;
 
       list.forEach(t=>{
-        const cur = t.currency || "USD";
-
-        if(t.type === "Deposit"){
-          sums.deposit[cur] += (t.entryPrice||0);
+        running += t.pnl || 0;
+        if (t.type==="Trade"){
+          if ((t.pnl||0)>0) totalProfit += t.pnl||0;
+          if ((t.pnl||0)<0) totalLoss   += Math.abs(t.pnl||0);
+          if ((t.pnl||0)>0) w++; else if ((t.pnl||0)<0) l++; else z++;
+        } else if (t.type==="Deposit"){
+          depCad += t.depositCad || 0;
+          depUsd += t.depositUsd || 0;
         }
 
-        if(t.type === "Trade"){
-          const pnl = t.pnl || 0;
-          sums.pnl[cur] += pnl;
-          if(pnl>0) sums.profit[cur] += pnl;
-          if(pnl<0) sums.loss[cur]   += Math.abs(pnl);
-          if(pnl>0) wins++; else if(pnl<0) losses++; else evens++;
-          if(t.entryDate >= cutISO) sums.last14[cur] += pnl;
-        }
-      });
-
-      // rows (show cumulative in base currency)
-      list.forEach(t=>{
         const cls=(t.pnl||0)>=0?"text-green-600":"text-red-600";
-        const result = t.type!=="Trade" ? "-" : t.pnl>0?"Win":t.pnl<0?"Loss":"Breakeven";
-        if(t.type==="Trade") cumBase += toBase(t.pnl||0, t.currency||"USD");
-
         body.insertAdjacentHTML("beforeend",`
           <tr class="hover:bg-gray-50">
-            <td class="px-3 py-2">${t.entryDate}</td>
-            <td class="px-3 py-2">${t.type}</td>
-            <td class="px-3 py-2 font-semibold text-indigo-600">${t.symbol||"-"}</td>
-            <td class="px-3 py-2">${t.assetType||"-"}</td>
-            <td class="px-3 py-2">${t.currency||"USD"}</td>
-            <td class="px-3 py-2 text-right">${money(t.entryPrice, t.currency||"USD")}</td>
-            <td class="px-3 py-2 text-right">${money(t.exitPrice,  t.currency||"USD")}</td>
-            <td class="px-3 py-2 text-right">${t.size||0}</td>
-            <td class="px-3 py-2">${t.action||"-"}</td>
-            <td class="px-3 py-2 text-right ${cls} font-semibold">${t.type==="Trade"?money(t.pnl, t.currency||"USD"):"-"}</td>
-            <td class="px-3 py-2 text-right ${cls}">${t.type==="Trade"?(t.pnlPct||0).toFixed(2)+"%":"-"}</td>
-            <td class="px-3 py-2 text-right">${t.type==="Trade"?money(cumBase, settings.base):"-"}</td>
-            <td class="px-3 py-2">${t.type==="Trade"?result:"-"}</td>
-            <td class="px-3 py-2 text-right"><button class="text-red-600" onclick="delTrade('${t.id}')">✕</button></td>
+            <td class="px-3 py-2">${t.entryDate||"—"}</td>
+            <td class="px-3 py-2">${t.type||"—"}</td>
+            <td class="px-3 py-2">${t.assetType||"—"}</td>
+            <td class="px-3 py-2 font-semibold text-indigo-600">${t.symbol||"—"}</td>
+            <td class="px-3 py-2 text-right">${money(t.entryPrice, t.type==="Deposit"?"CAD":"USD")}</td>
+            <td class="px-3 py-2 text-right">${t.type==="Deposit"?"—":money(t.exitPrice,"USD")}</td>
+            <td class="px-3 py-2 text-right">${t.type==="Deposit"?"—":(t.size??0)}</td>
+            <td class="px-3 py-2">${t.type==="Deposit"?"—":(t.action||"—")}</td>
+            <td class="px-3 py-2 text-right ${cls} font-semibold">${t.type==="Deposit"?"—":money(t.pnl,"USD")}</td>
+            <td class="px-3 py-2 text-right ${cls}">${t.type==="Deposit"?"—":((t.pnlPct||0).toFixed(2)+"%")}</td>
+            <td class="px-3 py-2 text-right">${t.type==="Deposit"?"—":money(running,"USD")}</td>
+            <td class="px-3 py-2 text-right">
+              <button class="text-indigo-600 mr-2" onclick='(${openEdit.toString()})(${JSON.stringify(t)})'>✏️</button>
+              <button class="text-red-600" onclick="delTrade('${t.id}')">✕</button>
+            </td>
           </tr>
         `);
       });
 
-      // totals in base currency
-      const totalDepositedBase = toBase(sums.deposit.USD,"USD") + toBase(sums.deposit.CAD,"CAD");
-      const totalProfitBase    = toBase(sums.profit.USD,"USD")  + toBase(sums.profit.CAD,"CAD");
-      const totalLossBase      = toBase(sums.loss.USD,"USD")    + toBase(sums.loss.CAD,"CAD");
-      const totalPnlBase       = toBase(sums.pnl.USD,"USD")     + toBase(sums.pnl.CAD,"CAD");
-      const last14Base         = toBase(sums.last14.USD,"USD")  + toBase(sums.last14.CAD,"CAD");
-
+      // Totals & Equity (Deposits USD + realized P&L)
       const trades = list.filter(x=>x.type==="Trade");
-      const wr = trades.length ? (wins/trades.length)*100 : 0;
+      const wr = trades.length ? (w/trades.length)*100 : 0;
+      $("total-deposit-cad").textContent = money(depCad,"CAD");
+      $("total-deposit-usd").textContent = money(depUsd,"USD");
+      $("total-profit").textContent = money(totalProfit,"USD");
+      $("total-loss").textContent = money(totalLoss,"USD");
+      $("win-rate").textContent = wr.toFixed(1)+"%";
+      $("total-equity").textContent = money(depUsd + (totalProfit - totalLoss),"USD");
 
-      // KPIs
-      $("pnl-14d").textContent      = money(last14Base, settings.base);
-      $("win-rate").textContent     = wr.toFixed(1)+"%";
-      $("total-trades").textContent = String(trades.length);
-      $("total-pnl").textContent    = money(totalPnlBase, settings.base);
-      $("total-pnl").className      = "text-2xl font-bold mt-1 " + (totalPnlBase>=0?"text-green-600":"text-red-600");
-      $("avg-pnl").textContent      = money(trades.length ? totalPnlBase / trades.length : 0, settings.base);
-
-      $("total-deposited").textContent = money(totalDepositedBase, settings.base);
-      $("total-profit").textContent    = money(totalProfitBase, settings.base);
-      $("total-loss").textContent      = money(totalLossBase, settings.base);
-
-      // per-currency breakdowns
-      $("total-pnl-break").textContent =
-        `USD ${money(sums.pnl.USD,"USD")} · CAD ${money(sums.pnl.CAD,"CAD")}`;
-      $("total-deposited-break").textContent =
-        `USD ${money(sums.deposit.USD,"USD")} · CAD ${money(sums.deposit.CAD,"CAD")}`;
-      $("total-profit-break").textContent =
-        `USD ${money(sums.profit.USD,"USD")} · CAD ${money(sums.profit.CAD,"CAD")}`;
-      $("total-loss-break").textContent =
-        `USD ${money(sums.loss.USD,"USD")} · CAD ${money(sums.loss.CAD,"CAD")}`;
-
-      // Charts (trades only, in base currency)
-      const labels = trades.map(t => `${t.entryDate} ${t.symbol||""}`.trim());
-      let r=0; const cumulative = trades.map(t => r += toBase(t.pnl||0, t.currency||"USD"));
-      const w = trades.filter(t=>t.pnl>0).length;
-      const l = trades.filter(t=>t.pnl<0).length;
-      const z = trades.filter(t=>t.pnl===0).length;
+      // Charts
+      const labelTrades = list.filter(x=>x.type==="Trade");
+      const labels = labelTrades.map(t => `${t.entryDate} ${t.symbol||""}`.trim());
+      let r=0; const cum = labelTrades.map(t => r += (t.pnl||0));
+      const W = labelTrades.filter(t=>t.pnl>0).length;
+      const L = labelTrades.filter(t=>t.pnl<0).length;
+      const Z = labelTrades.filter(t=>t.pnl===0).length;
 
       if(!pnlChart){
-        pnlChart = new Chart($("pnlChart"), {
+        pnlChart=new Chart($("pnlChart"),{
           type:"line",
-          data:{ labels, datasets:[{ label:"Cumulative P&L ("+settings.base+")", data:cumulative, borderColor:"#10b981", fill:false }]},
-          options:{ responsive:true, maintainAspectRatio:false }
+          data:{labels,datasets:[{label:"Cumulative P&L",data:cum,borderColor:"#10b981"}]},
+          options:{responsive:true,maintainAspectRatio:false}
         });
       }else{
-        pnlChart.data.labels=labels;
-        pnlChart.data.datasets[0].label="Cumulative P&L ("+settings.base+")";
-        pnlChart.data.datasets[0].data=cumulative;
-        pnlChart.update();
+        pnlChart.data.labels=labels; pnlChart.data.datasets[0].data=cum; pnlChart.update();
       }
-
       if(!outcomesChart){
-        outcomesChart = new Chart($("outcomesChart"), {
+        outcomesChart=new Chart($("outcomesChart"),{
           type:"doughnut",
-          data:{ labels:["Win","Loss","Breakeven"], datasets:[{ data:[w,l,z], backgroundColor:["#10b981","#ef4444","#f59e0b"] }]},
-          options:{ responsive:true, maintainAspectRatio:false }
+          data:{labels:["Win","Loss","Breakeven"],datasets:[{data:[W,L,Z],backgroundColor:["#10b981","#ef4444","#f59e0b"]}]},
+          options:{responsive:true,maintainAspectRatio:false}
         });
       }else{
-        outcomesChart.data.datasets[0].data=[w,l,z];
-        outcomesChart.update();
+        outcomesChart.data.datasets[0].data=[W,L,Z]; outcomesChart.update();
       }
     }
   </script>
