@@ -5,13 +5,14 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
   <title>Trading Performance Journal</title>
 
-  <!-- Tailwind & Chart.js -->
+  <!-- Tailwind + ChartJS -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
 
   <style>
     #trade-list-container { -webkit-overflow-scrolling: touch; }
     .spinner { border-top-color:#4f46e5 }
+    .btn { @apply px-3 py-1 rounded-lg text-sm; }
   </style>
 </head>
 
@@ -21,14 +22,13 @@
   <div id="loading" class="fixed inset-0 hidden items-center justify-center bg-gray-50 z-50">
     <div class="text-center p-8 bg-white shadow-xl rounded-xl">
       <div class="spinner animate-spin rounded-full h-12 w-12 border-4 border-indigo-500 border-gray-200 mx-auto mb-4"></div>
-      <p id="loading-msg" class="text-indigo-600 font-semibold">Loading...</p>
+      <p id="loading-msg" class="text-indigo-600 font-semibold">Loading…</p>
     </div>
   </div>
 
   <!-- Login -->
   <div id="login" class="max-w-sm mx-auto mt-16 bg-white shadow-xl rounded-xl p-6">
     <h1 class="text-2xl font-bold text-indigo-700 mb-2">Trading Journal Login</h1>
-    <p class="text-sm text-gray-500 mb-4">Secure access</p>
     <form id="login-form" class="space-y-3">
       <input id="email" type="email" placeholder="Email" class="w-full p-3 border rounded-lg" required />
       <input id="password" type="password" placeholder="Password" class="w-full p-3 border rounded-lg" required />
@@ -42,81 +42,86 @@
     <header class="mb-8 p-4 bg-white shadow-lg rounded-xl flex items-center justify-between">
       <div>
         <h1 class="text-3xl font-bold text-indigo-700 mb-1">Trading Performance Journal</h1>
-        <p class="text-sm text-gray-500">Log trades & performance metrics</p>
+        <p class="text-sm text-gray-500">Add, edit, and close trades. Open trades do not affect totals.</p>
         <p id="auth-status" class="text-xs mt-2 text-indigo-400"></p>
       </div>
       <button id="logout" class="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg">Log out</button>
     </header>
 
-    <!-- Metrics cards -->
-    <div class="grid grid-cols-2 md:grid-cols-7 gap-4 mb-6">
-      <div class="bg-white p-4 rounded-xl shadow-lg border-l-4 border-indigo-600">
-        <p class="text-xs text-gray-500 uppercase">Equity (USD)</p>
-        <p id="equity-usd" class="text-2xl font-bold mt-1">$0.00</p>
-      </div>
+    <!-- Metrics -->
+    <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
       <div class="bg-white p-4 rounded-xl shadow-lg border-l-4 border-indigo-500">
-        <p class="text-xs text-gray-500 uppercase">Total Deposits</p>
-        <p id="total-deposits" class="text-2xl font-bold mt-1">$0.00</p>
+        <p class="text-xs text-gray-500 uppercase">Total Realized P&L</p>
+        <p id="total-pnl" class="text-2xl font-bold mt-1">$0.00</p>
       </div>
       <div class="bg-white p-4 rounded-xl shadow-lg border-l-4 border-green-500">
-        <p class="text-xs text-gray-500 uppercase">Total Profit</p>
-        <p id="total-profit" class="text-2xl font-bold mt-1 text-green-600">$0.00</p>
-      </div>
-      <div class="bg-white p-4 rounded-xl shadow-lg border-l-4 border-red-500">
-        <p class="text-xs text-gray-500 uppercase">Total Loss</p>
-        <p id="total-loss" class="text-2xl font-bold mt-1 text-red-600">$0.00</p>
+        <p class="text-xs text-gray-500 uppercase">Win Rate (closed)</p>
+        <p id="win-rate" class="text-2xl font-bold mt-1">0%</p>
       </div>
       <div class="bg-white p-4 rounded-xl shadow-lg border-l-4 border-yellow-500">
-        <p class="text-xs text-gray-500 uppercase">Total Trades</p>
+        <p class="text-xs text-gray-500 uppercase">Closed Trades</p>
         <p id="total-trades" class="text-2xl font-bold mt-1">0</p>
       </div>
-      <div class="bg-white p-4 rounded-xl shadow-lg border-l-4 border-purple-500">
-        <p class="text-xs text-gray-500 uppercase">Avg P&L / Trade</p>
+      <div class="bg-white p-4 rounded-xl shadow-lg border-l-4 border-red-500">
+        <p class="text-xs text-gray-500 uppercase">Avg P&L (closed)</p>
         <p id="avg-pnl" class="text-2xl font-bold mt-1">$0.00</p>
       </div>
-      <div class="bg-white p-4 rounded-xl shadow-lg border-l-4 border-green-600">
-        <p class="text-xs text-gray-500 uppercase">Win Rate</p>
-        <p id="win-rate" class="text-2xl font-bold mt-1">0%</p>
+      <div class="bg-white p-4 rounded-xl shadow-lg border-l-4 border-indigo-600">
+        <p class="text-xs text-gray-500 uppercase">Last 14 Days (closed)</p>
+        <p id="pnl-14d" class="text-2xl font-bold mt-1">$0.00</p>
       </div>
     </div>
 
     <!-- Charts -->
     <section class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
       <div class="bg-white p-6 rounded-xl shadow-lg lg:col-span-2">
-        <h2 class="text-lg font-semibold text-indigo-600 mb-4">Cumulative P&L</h2>
+        <h2 class="text-lg font-semibold text-indigo-600 mb-4">Cumulative Realized P&L</h2>
         <div class="relative h-64 md:h-96"><canvas id="pnlChart"></canvas></div>
       </div>
       <div class="bg-white p-6 rounded-xl shadow-lg">
-        <h2 class="text-lg font-semibold text-indigo-600 mb-4">Trade Outcomes</h2>
+        <h2 class="text-lg font-semibold text-indigo-600 mb-4">Closed Outcomes</h2>
         <div class="relative h-64"><canvas id="outcomesChart"></canvas></div>
       </div>
     </section>
 
-    <!-- Add Entry -->
+    <!-- Add / Edit Entry -->
     <section class="bg-white p-6 rounded-xl shadow-lg mb-8">
-      <h2 class="text-lg font-semibold text-indigo-600 mb-4">Log New Entry</h2>
-      <form id="add-form" class="grid grid-cols-2 md:grid-cols-8 gap-4">
+      <h2 class="text-lg font-semibold text-indigo-600 mb-4" id="form-title">Log New Entry</h2>
+      <form id="entry-form" class="grid grid-cols-2 md:grid-cols-8 gap-4">
+        <input id="docId" type="hidden" />
         <select id="type" class="p-3 border rounded-lg">
-          <option>Trade</option><option>Deposit</option>
+          <option>Trade</option>
+          <option>Deposit</option>
         </select>
+
         <input id="symbol" placeholder="Symbol" class="p-3 border rounded-lg col-span-2" />
+
         <input id="entryDate" type="date" class="p-3 border rounded-lg" />
+
         <input id="size" type="number" placeholder="Size" class="p-3 border rounded-lg" />
+
         <input id="entryPrice" type="number" step="0.01" placeholder="Entry / Amount" class="p-3 border rounded-lg" />
-        <input id="exitPrice" type="number" step="0.01" placeholder="Exit (for trades)" class="p-3 border rounded-lg" />
+
+        <!-- Leave Exit blank to keep trade OPEN -->
+        <input id="exitPrice" type="number" step="0.01" placeholder="Exit (leave blank if open)" class="p-3 border rounded-lg" />
+
         <select id="action" class="p-3 border rounded-lg">
-          <!-- per your request: Call / Put only -->
-          <option>Call</option><option>Put</option>
+          <option>Buy</option>
+          <option>Call</option>
+          <option>Put</option>
         </select>
-        <button class="bg-indigo-600 text-white rounded-lg font-bold py-3 col-span-2 md:col-span-1">Add</button>
+
+        <button id="saveBtn" class="bg-indigo-600 text-white rounded-lg font-bold py-3 col-span-2 md:col-span-1">Add</button>
+        <button id="cancelEditBtn" type="button" class="hidden bg-gray-200 rounded-lg font-semibold py-3 col-span-2 md:col-span-1">Cancel</button>
       </form>
       <div id="form-msg" class="text-red-600 text-xs mt-2"></div>
+      <p class="text-xs text-gray-500 mt-2">Tip: Keep <b>Exit</b> empty for open trades. Open trades will not affect totals or charts.</p>
     </section>
 
     <!-- History -->
     <section class="bg-white p-6 rounded-xl shadow-lg">
       <h2 class="text-lg font-semibold text-indigo-600 mb-4">Transaction History</h2>
-      <div id="trade-list-container" class="overflow-x-auto max-h-[420px]">
+      <div id="trade-list-container" class="overflow-x-auto max-h-[500px]">
         <table class="min-w-full divide-y divide-gray-200 text-sm">
           <thead class="bg-gray-50">
             <tr>
@@ -127,11 +132,11 @@
               <th class="px-3 py-2 text-right">Exit</th>
               <th class="px-3 py-2 text-right">Size</th>
               <th class="px-3 py-2 text-left">Action</th>
-              <th class="px-3 py-2 text-right">P&L</th>
+              <th class="px-3 py-2 text-left">Status</th>
+              <th class="px-3 py-2 text-right">Realized P&L</th>
               <th class="px-3 py-2 text-right">P&L %</th>
               <th class="px-3 py-2 text-right">Cum P&L</th>
-              <th class="px-3 py-2 text-left">Result</th>
-              <th></th>
+              <th class="px-3 py-2 text-right">Actions</th>
             </tr>
           </thead>
           <tbody id="trade-list"></tbody>
@@ -141,63 +146,56 @@
     </section>
   </div>
 
-  <!-- SCRIPT (all-in-one) -->
+  <!-- SCRIPT -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js";
     import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-auth.js";
-    import { getFirestore, collection, addDoc, deleteDoc, doc, onSnapshot, query, where } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
+    import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query, where } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
 
-    /* ====== CONFIG ====== */
-    const ALLOWED_EMAIL = "kaur.2804amandeep@gmail.com";
+    // --- Your Firebase config (exactly as you posted) ---
     const firebaseConfig = {
       apiKey: "AIzaSyB5rvkKPst6V9-7HoqK1f27jQj6x7f8LiA",
       authDomain: "trading-journal-da4eb.firebaseapp.com",
       projectId: "trading-journal-da4eb",
-      storageBucket: "trading-journal-da4eb.appspot.com",
+      storageBucket: "trading-journal-da4eb.firebasestorage.app",
       messagingSenderId: "50906470929",
       appId: "1:50906470929:web:b9ad784e9ae86c06d42fb0",
       measurementId: "G-WR261BKTXL"
     };
 
-    /* ====== INIT ====== */
+    // --- Init ---
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
-    const db = getFirestore(app);
+    const db   = getFirestore(app);
 
-    /* ====== DOM HELPERS ====== */
+    // --- Helpers ---
     const $ = id => document.getElementById(id);
     const show = el => el.classList.remove("hidden");
     const hide = el => el.classList.add("hidden");
-    const money = n => new Intl.NumberFormat("en-US",{style:"currency",currency:"USD"}).format(Number(n)||0);
+    const money = n => new Intl.NumberFormat("en-US",{style:"currency",currency:"USD"}).format(Number.isFinite(+n)?+n:0);
     const todayISO = () => {
       const d=new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
     };
-    function setLoading(msg){ $("loading-msg").textContent=msg; show($("loading")); }
-    function clearLoading(){ hide($("loading")); }
+    const setLoading = m => { $("loading-msg").textContent=m; $("loading").classList.remove("hidden"); };
+    const clearLoading = () => $("loading").classList.add("hidden");
 
-    /* ====== AUTH ====== */
-    setLoading("Checking session...");
-    $("logout").onclick = ()=>signOut(auth);
-
+    // --- Auth UI ---
+    setLoading("Checking session…");
     $("login-form").addEventListener("submit", async (e)=>{
       e.preventDefault();
-      $("login-msg").textContent = "";
-      try {
-        const email = $("email").value.trim();
-        const pass  = $("password").value.trim();
-        const cred = await signInWithEmailAndPassword(auth,email,pass);
-        if(cred.user.email !== ALLOWED_EMAIL){
-          $("login-msg").textContent="Not authorized";
-          await signOut(auth);
-          return;
-        }
-      }catch(err){ $("login-msg").textContent=err.message; }
+      $("login-msg").textContent="";
+      try{
+        const email=$("email").value.trim();
+        const pass =$("password").value.trim();
+        await signInWithEmailAndPassword(auth,email,pass);
+      }catch(err){ $("login-msg").textContent=err.message || String(err); }
     });
+    $("logout").onclick = ()=>signOut(auth);
 
     onAuthStateChanged(auth, (user)=>{
       clearLoading();
-      if(user && user.email === ALLOWED_EMAIL){
-        $("auth-status").textContent = "Signed in as: "+user.email;
+      if(user){
+        $("auth-status").textContent = "Signed in as: "+(user.email || user.uid);
         hide($("login")); show($("app"));
         boot(user.uid);
       }else{
@@ -205,66 +203,142 @@
       }
     });
 
-    /* ====== APP (DB + UI) ====== */
-    let unsub=null, pnlChart=null, outcomesChart=null;
+    // --- Firestore bindings ---
+    let unsub=null, currentUid=null, editMode=false;
 
     function boot(uid){
+      currentUid=uid;
       if(unsub) unsub();
+
+      // query only my docs
       const ref = collection(db, "trades");
-      const q = query(ref, where("ownerUid","==",uid));
+      const q   = query(ref, where("ownerUid","==",uid));
 
-      // Add entry
-      $("add-form").onsubmit = async (e)=>{
-        e.preventDefault();
-        $("form-msg").textContent="";
+      // wire form
+      $("entry-form").onsubmit = saveEntry;
+      $("cancelEditBtn").onclick = resetForm;
 
-        const type   = $("type").value;
-        const symbol = ($("symbol").value||"").toUpperCase();
-        const entryDate = $("entryDate").value || todayISO();
-        const size   = +($("size").value||0);
-        const entry  = +($("entryPrice").value||0);
-        const exit   = +($("exitPrice").value||0);
-        const action = $("action").value; // Call/Put
-
-        if(type==="Trade"){
-          if(!symbol) return $("form-msg").textContent = "Symbol required";
-          if(!(size>0)) return $("form-msg").textContent = "Size must be > 0";
-        }else{ // Deposit
-          if(!(entry>0)) return $("form-msg").textContent = "Deposit amount required (use Entry / Amount)";
-        }
-
-        let pnl=0,pct=0;
-        if(type==="Trade"){
-          const dir = (action==="Put") ? -1 : 1; // Put = bearish
-          pnl = (exit - entry) * size * dir;
-          pct = entry>0 ? (pnl/(entry*size))*100 : 0;
-        }
-
-        try{
-          await addDoc(ref,{
-            ownerUid: uid,
-            type, action, symbol,
-            entryDate, size,
-            entryPrice: entry, exitPrice: exit,
-            pnl: +pnl.toFixed(2),
-            pnlPct: +pct.toFixed(2),
-            timestamp: new Date().toISOString()
-          });
-          e.target.reset();
-        }catch(err){
-          $("form-msg").textContent="Error: "+err.message;
-        }
-      };
-
-      // Live table
+      // live view
       unsub = onSnapshot(q, snap=>{
         const list=[]; snap.forEach(d=>list.push({id:d.id,...d.data()}));
-        render(list.sort((a,b)=>new Date(a.entryDate)-new Date(b.entryDate)));
+        render(list.sort((a,b)=> new Date(a.entryDate) - new Date(b.entryDate)));
       });
     }
 
-    // Delete
-    window.delTrade = async(id)=>{ try{ await deleteDoc(doc(db,"trades",id)); }catch(e){ alert(e.message);} };
+    function resetForm(){
+      editMode=false;
+      $("form-title").textContent = "Log New Entry";
+      $("saveBtn").textContent = "Add";
+      $("docId").value="";
+      $("entry-form").reset();
+      $("form-msg").textContent="";
+      $("entryDate").value="";
+    }
+
+    async function saveEntry(e){
+      e.preventDefault();
+      $("form-msg").textContent="";
+
+      const data = readForm();
+      const ref  = collection(db, "trades");
+
+      // validate
+      if(data.type==="Trade"){
+        if(!data.symbol) return $("form-msg").textContent="Symbol required";
+        if(!(data.size>0)) return $("form-msg").textContent="Size must be > 0";
+        if(!(data.entryPrice>0)) return $("form-msg").textContent="Entry must be > 0";
+      }else if(data.type==="Deposit"){
+        if(!(data.entryPrice>0)) return $("form-msg").textContent="Deposit 'Entry / Amount' must be > 0";
+      }
+
+      // compute realized only if CLOSED
+      const hasExit = Number.isFinite(data.exitPrice) && data.exitPrice>0;
+      if(data.type==="Trade" && hasExit){
+        const dir = (data.action==="Put") ? -1 : 1; // Buy/Call = +1, Put = -1
+        const pnl = (data.exitPrice - data.entryPrice) * data.size * dir;
+        data.realizedPnl = +pnl.toFixed(2);
+        data.pnlPct      = +(data.entryPrice>0 ? (pnl/(data.entryPrice*data.size))*100 : 0).toFixed(2);
+        data.status      = "closed";
+      }else if(data.type==="Trade"){
+        data.exitPrice   = null;
+        data.realizedPnl = null;
+        data.pnlPct      = null;
+        data.status      = "open";
+      }else{
+        // deposit row
+        data.exitPrice   = null;
+        data.realizedPnl = null;
+        data.pnlPct      = null;
+        data.status      = "n/a";
+      }
+
+      try{
+        if(editMode && $("docId").value){
+          await updateDoc(doc(db,"trades",$("docId").value), data);
+        }else{
+          await addDoc(ref, { ownerUid: currentUid, ...data, timestamp:new Date().toISOString() });
+        }
+        resetForm();
+      }catch(err){
+        $("form-msg").textContent = "Save failed: " + (err.message || err);
+      }
+    }
+
+    function readForm(){
+      const v = id => document.getElementById(id).value;
+      const n = id => {
+        const x = document.getElementById(id).value; return x===""? NaN : +x;
+      };
+      return {
+        type: v("type"),
+        symbol: (v("symbol")||"").toUpperCase(),
+        entryDate: v("entryDate") || todayISO(),
+        size: n("size"),
+        entryPrice: n("entryPrice"),
+        exitPrice: n("exitPrice"), // may be NaN -> handled in saveEntry
+        action: v("action")
+      };
+    }
+
+    // table render & actions
+    window.editTrade = (id, row) => {
+      editMode=true;
+      $("form-title").textContent = "Edit Entry";
+      $("saveBtn").textContent = "Save";
+      show($("cancelEditBtn"));
+
+      $("docId").value   = id;
+      $("type").value    = row.type || "Trade";
+      $("symbol").value  = row.symbol || "";
+      $("entryDate").value = row.entryDate || "";
+      $("size").value    = (row.size ?? "");
+      $("entryPrice").value = (row.entryPrice ?? "");
+      $("exitPrice").value  = (row.exitPrice ?? "");
+      $("action").value  = row.action || "Buy";
+      window.scrollTo({top:0,behavior:"smooth"});
+    };
+
+    window.closeTrade = async(id,row) => {
+      try{
+        if(row.type!=="Trade") return;
+        if(row.status==="closed") return;
+
+        // quick close helper: if exit empty, use entry (P&L = 0) so user can edit later
+        await updateDoc(doc(db,"trades",id), {
+          status:"closed",
+          exitPrice: row.exitPrice && row.exitPrice>0 ? row.exitPrice : row.entryPrice,
+          realizedPnl: 0,
+          pnlPct: 0
+        });
+      }catch(e){ alert("Close failed: "+(e.message||e)); }
+    };
+
+    window.delTrade = async(id) => {
+      try{ await deleteDoc(doc(db,"trades",id)); }
+      catch(e){ alert(e.message||e); }
+    };
+
+    let pnlChart=null, outcomesChart=null;
 
     function render(list){
       const body=$("trade-list"); body.innerHTML="";
@@ -272,113 +346,111 @@
 
       if(!list.length){
         show(empty);
-        setMetrics(0,0,0,0,0,0,0);
-        drawCharts([],[]);
+        setTopline(0,0,0,0,0);
+        updateCharts([]);
         return;
       }
       hide(empty);
 
-      let running=0, wins=0, losses=0, evens=0;
-      let totalDeposits=0, totalProfit=0, totalLoss=0;
+      // compute totals using CLOSED trades only
+      const closed = list.filter(x => x.type==="Trade" && x.status==="closed" && Number.isFinite(x.realizedPnl));
+      const deposits = list.filter(x => x.type==="Deposit");
 
-      const rows=[];
+      let running=0, wins=0, losses=0, evens=0, last14=0;
+      const cutISO=new Date(Date.now()-14*864e5).toISOString().split("T")[0];
+
+      // table rows
       list.forEach(t=>{
-        // deposits use entryPrice as amount, do not affect P&L
-        if(t.type==="Deposit"){
-          totalDeposits += (t.entryPrice||0);
-        }
+        const isClosed = (t.status==="closed");
+        const isOpen   = (t.type==="Trade" && t.status==="open");
+        const pnl      = isClosed ? (t.realizedPnl||0) : null;
+        if(isClosed) running += pnl;
 
-        // trades affect P&L
-        if(t.type==="Trade"){
-          running += (t.pnl||0);
-          if((t.pnl||0)>0){ wins++; totalProfit += (t.pnl||0); }
-          else if((t.pnl||0)<0){ losses++; totalLoss += Math.abs(t.pnl||0); }
-          else { evens++; }
-        }
+        const cls = (pnl??0) >= 0 ? "text-green-600" : "text-red-600";
+        const result = t.type!=="Trade" ? "-" : isOpen ? "Open" : (pnl>0?"Win":pnl<0?"Loss":"Breakeven");
+        if(result==="Win")wins++; if(result==="Loss")losses++; if(result==="Breakeven")evens++;
+        if(isClosed && t.entryDate>=cutISO) last14 += pnl;
 
-        const cls=(t.pnl||0)>=0?"text-green-600":"text-red-600";
-        const result = t.type!=="Trade" ? "-" : (t.pnl>0?"Win":t.pnl<0?"Loss":"Breakeven");
-
-        rows.push(`
+        body.insertAdjacentHTML("beforeend",`
           <tr class="hover:bg-gray-50">
-            <td class="px-3 py-2">${t.entryDate||"-"}</td>
-            <td class="px-3 py-2">${t.type||"-"}</td>
-            <td class="px-3 py-2 font-semibold text-indigo-600">${t.symbol||"-"}</td>
+            <td class="px-3 py-2">${t.entryDate||"—"}</td>
+            <td class="px-3 py-2">${t.type||"—"}</td>
+            <td class="px-3 py-2 font-semibold text-indigo-600">${t.symbol||"—"}</td>
             <td class="px-3 py-2 text-right">${money(t.entryPrice)}</td>
-            <td class="px-3 py-2 text-right">${money(t.exitPrice)}</td>
-            <td class="px-3 py-2 text-right">${Number.isFinite(t.size)?t.size:0}</td>
-            <td class="px-3 py-2">${t.action||"-"}</td>
-            <td class="px-3 py-2 text-right ${cls} font-semibold">${money(t.pnl)}</td>
-            <td class="px-3 py-2 text-right ${cls}">${(Number.isFinite(t.pnlPct)?t.pnlPct:0).toFixed(2)}%</td>
-            <td class="px-3 py-2 text-right">${money(running)}</td>
-            <td class="px-3 py-2">${result}</td>
-            <td class="px-3 py-2 text-right">
-              <button class="text-red-600" onclick="delTrade('${t.id}')">X</button>
+            <td class="px-3 py-2 text-right">${t.exitPrice? money(t.exitPrice): "—"}</td>
+            <td class="px-3 py-2 text-right">${Number.isFinite(t.size)? t.size: 0}</td>
+            <td class="px-3 py-2">${t.action||"—"}</td>
+            <td class="px-3 py-2">${t.status|| (t.exitPrice? "closed":"open")}</td>
+            <td class="px-3 py-2 text-right ${isClosed?cls:''} font-semibold">${isClosed? money(pnl): "—"}</td>
+            <td class="px-3 py-2 text-right ${isClosed?cls:''}">
+              ${isClosed? ((Number.isFinite(t.pnlPct)? t.pnlPct:0).toFixed(2)+"%") : "—"}
+            </td>
+            <td class="px-3 py-2 text-right">${isClosed? money(running): "—"}</td>
+            <td class="px-3 py-2 text-right space-x-2">
+              <button class="btn bg-gray-100" onclick='editTrade("${t.id}", ${JSON.stringify(slim(t))})'>Edit</button>
+              ${isOpen? `<button class="btn bg-amber-100" onclick='closeTrade("${t.id}", ${JSON.stringify(slim(t))})'>Mark Closed</button>`:""}
+              <button class="btn bg-red-100 text-red-700" onclick='delTrade("${t.id}")'>Delete</button>
             </td>
           </tr>
         `);
       });
-      body.innerHTML = rows.join("");
 
-      const tradesOnly = list.filter(x=>x.type==="Trade");
-      const winRate = tradesOnly.length ? (wins / tradesOnly.length) * 100 : 0;
-      const totalPnl = tradesOnly.reduce((a,b)=>a+(b.pnl||0),0);
-      const avgPnl = tradesOnly.length ? (totalPnl / tradesOnly.length) : 0;
-      const equity = totalDeposits + totalPnl;
+      const totalPnl = closed.reduce((a,b)=>a+(b.realizedPnl||0),0);
+      const wr = closed.length ? (wins/closed.length)*100 : 0;
+      const avg = closed.length ? totalPnl/closed.length : 0;
 
-      setMetrics(equity, totalDeposits, totalProfit, totalLoss, winRate, tradesOnly.length, avgPnl);
-      drawCharts(
-        list.map(t=>`${t.entryDate} ${t.symbol||""}`.trim()),
-        (()=>{
-          let r=0; return list.map(t=>t.type==="Trade" ? (r+=(t.pnl||0)) : r);
-        })()
-      );
+      setTopline(totalPnl, wr, closed.length, avg, last14);
+
+      // charts use CLOSED trades only
+      const sortedClosed = closed.sort((a,b)=> new Date(a.entryDate)-new Date(b.entryDate));
+      updateCharts(sortedClosed);
     }
 
-    function setMetrics(equity,totalDep,totalProf,totalLoss,wr,trades,avgPnl){
-      $("equity-usd").textContent = money(equity);
-      $("total-deposits").textContent = money(totalDep);
-      $("total-profit").textContent = money(totalProf);
-      $("total-loss").textContent = money(totalLoss);
-      $("win-rate").textContent = (wr||0).toFixed(1)+"%";
-      $("total-trades").textContent = String(trades||0);
-
-      const avgEl = $("avg-pnl");
-      avgEl.textContent = money(avgPnl||0);
-      avgEl.classList.remove("text-green-600","text-red-600");
-      avgEl.classList.add((avgPnl||0) >= 0 ? "text-green-600" : "text-red-600");
+    function slim(t){
+      // keep only fields we edit
+      const o = {type:t.type, action:t.action, symbol:t.symbol, entryDate:t.entryDate,
+                 size:t.size, entryPrice:t.entryPrice, exitPrice:t.exitPrice, status:t.status};
+      return o;
     }
 
-    function drawCharts(labels, cum){
+    function setTopline(totalPnl, wr, nTrades, avg, last14){
+      $("total-pnl").textContent = money(totalPnl);
+      $("total-pnl").className   = "text-2xl font-bold mt-1 " + (totalPnl>=0?"text-green-600":"text-red-600");
+      $("win-rate").textContent  = (wr||0).toFixed(1) + "%";
+      $("total-trades").textContent = String(nTrades||0);
+      $("avg-pnl").textContent   = money(avg||0);
+      $("pnl-14d").textContent   = money(last14||0);
+      $("pnl-14d").className     = "text-2xl font-bold mt-1 " + (last14>=0?"text-green-600":"text-red-600");
+    }
+
+    function updateCharts(closed){
+      const labels = closed.map(t=> `${t.entryDate} ${t.symbol||""}`.trim());
+      let r=0; const cum = closed.map(t=> r += (t.realizedPnl||0));
+
+      const w = closed.filter(t=>t.realizedPnl>0).length;
+      const l = closed.filter(t=>t.realizedPnl<0).length;
+      const z = closed.filter(t=>t.realizedPnl===0).length;
+
       if(!pnlChart){
-        pnlChart=new Chart($("pnlChart"),{
+        pnlChart = new Chart($("pnlChart"),{
           type:"line",
-          data:{labels,datasets:[{label:"Cumulative P&L",data:cum,borderColor:"#10b981"}]},
+          data:{ labels, datasets:[{ label:"Cumulative Realized P&L", data:cum, borderColor:"#10b981" }]},
           options:{responsive:true,maintainAspectRatio:false}
         });
       }else{
-        pnlChart.data.labels=labels;
-        pnlChart.data.datasets[0].data=cum;
+        pnlChart.data.labels = labels;
+        pnlChart.data.datasets[0].data = cum;
         pnlChart.update();
       }
 
-      const w = cum.length ? null : null; // (not used here—outcomes read from table calc)
-
-      const win = Array.from(document.querySelectorAll("#trade-list tr td:nth-child(11)"))
-        .filter(td=>td.textContent==="Win").length;
-      const loss = Array.from(document.querySelectorAll("#trade-list tr td:nth-child(11)"))
-        .filter(td=>td.textContent==="Loss").length;
-      const even = Array.from(document.querySelectorAll("#trade-list tr td:nth-child(11)"))
-        .filter(td=>td.textContent==="Breakeven").length;
-
       if(!outcomesChart){
-        outcomesChart=new Chart($("outcomesChart"),{
+        outcomesChart = new Chart($("outcomesChart"),{
           type:"doughnut",
-          data:{labels:["Win","Loss","Breakeven"],datasets:[{data:[win,loss,even],backgroundColor:["#10b981","#ef4444","#f59e0b"]}]},
+          data:{ labels:["Win","Loss","Breakeven"], datasets:[{ data:[w,l,z], backgroundColor:["#10b981","#ef4444","#f59e0b"]}]},
           options:{responsive:true,maintainAspectRatio:false}
         });
       }else{
-        outcomesChart.data.datasets[0].data=[win,loss,even];
+        outcomesChart.data.datasets[0].data = [w,l,z];
         outcomesChart.update();
       }
     }
